@@ -20,6 +20,11 @@ class SendAttendanceReminder extends Command
 
         if (!$waService->isEnabled()) {
             $this->warn('WhatsApp not enabled or not configured');
+            // Debug info
+            $this->line('API URL: ' . Setting::getValue('whatsapp_api_url', '(empty)'));
+            $this->line('API Key: ' . (Setting::getValue('whatsapp_api_key') ? '***set***' : '(empty)'));
+            $this->line('Sender: ' . Setting::getValue('whatsapp_sender_number', '(empty)'));
+            $this->line('Enabled: ' . (Setting::getValue('whatsapp_enabled') ? 'Yes' : 'No'));
             return 0;
         }
 
@@ -47,7 +52,7 @@ class SendAttendanceReminder extends Command
                     $sent++;
                     $this->info("Reminder sent to {$user->name}");
                 } else {
-                    $this->warn("Failed to send to {$user->name}");
+                    $this->warn("Failed to send to {$user->name} (phone: {$user->phone})");
                 }
             } else {
                 $skipped++;

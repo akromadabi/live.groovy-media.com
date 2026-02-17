@@ -93,200 +93,253 @@ class TiktokReportController extends Controller
     /**
      * Store a newly created report
      * Supports format: NAMA, DURASI (JAM), TANGGAL (Indonesian date)
+     * Supports multiple file upload
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'report_file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'report_files' => 'required|array|min:1',
+            'report_files.*' => 'file|mimes:xlsx,xls|max:10240',
         ]);
 
-        $file = $request->file('report_file');
-        $originalFilename = $file->getClientOriginalName();
-        $storedFilename = time() . '_' . $originalFilename;
+        $files = $request->file('report_files');
+        $successMessages = [];
+        $errorMessages = [];
 
-        try {
-            $spreadsheet = IOFactory::load($file->getRealPath());
-            $worksheet = $spreadsheet->getActiveSheet();
-            $data = $worksheet->toArray();
+        // Pre-load all users for name matching (case-insensitive) - once for all files
+        $allUsers = User::where('role', 'user')->get()->keyBy(function ($user) {
+            return strtolower(trim($user->name));
+        });
 
-            // Find header row (search for row containing "DURASI" or "TANGGAL" or "Duration" or "Start time")
-            $headerRowIndex = 0;
-            $header = null;
+        foreach ($files as $fileIndex => $file) {
+            $originalFilename = $file->getClientOriginalName();
+            $storedFilename = time() . '_' . $fileIndex . '_' . $originalFilename;
 
-            for ($i = 0; $i < min(10, count($data)); $i++) {
-                $rowLower = array_map('strtolower', array_map('trim', array_map('strval', $data[$i])));
-                $rowString = implode(' ', $rowLower);
-
-                if (
-                    strpos($rowString, 'durasi') !== false ||
-                    strpos($rowString, 'tanggal') !== false ||
-                    strpos($rowString, 'duration') !== false ||
-                    strpos($rowString, 'start') !== false
-                ) {
-                    $headerRowIndex = $i;
-                    $header = $data[$i];
-                    break;
-                }
+            try {
+                $result = $this->processExcelFile($file, $storedFilename, $originalFilename, $allUsers);
+                $successMessages[] = $result;
+            } catch (\Exception $e) {
+                $errorMessages[] = "❌ {$originalFilename}: " . $e->getMessage();
             }
-
-            if ($header === null) {
-                return back()->with('error', 'Header tidak ditemukan. Pastikan file memiliki kolom "DURASI" dan "TANGGAL".');
-            }
-
-            // Get data rows (after header)
-            $dataRows = array_slice($data, $headerRowIndex + 1);
-
-            // Convert header to lowercase for matching
-            $headerLower = array_map('strtolower', array_map('trim', array_map('strval', $header)));
-
-            // Find column indices - support both Indonesian and English formats
-            $nameIndex = null;
-            $durationIndex = null;
-            $dateIndex = null;
-
-            foreach ($headerLower as $index => $col) {
-                // Name column: "nama", "user", "name"
-                if ($nameIndex === null && (strpos($col, 'nama') !== false || strpos($col, 'user') !== false || $col === 'name')) {
-                    $nameIndex = $index;
-                }
-                // Duration column: "durasi" (Indonesian) or "duration" (English)
-                if ($durationIndex === null && (strpos($col, 'durasi') !== false || strpos($col, 'duration') !== false)) {
-                    $durationIndex = $index;
-                }
-                // Date column: "tanggal" (Indonesian) or "start time" / "date" (English)
-                if ($dateIndex === null && (strpos($col, 'tanggal') !== false || strpos($col, 'start') !== false || $col === 'date')) {
-                    $dateIndex = $index;
-                }
-            }
-
-            if ($durationIndex === null) {
-                return back()->with('error', 'Kolom "DURASI" atau "Duration" tidak ditemukan di file.');
-            }
-            if ($dateIndex === null) {
-                return back()->with('error', 'Kolom "TANGGAL" atau "Start time" tidak ditemukan di file.');
-            }
-
-            // Check if duration is in hours (JAM) or seconds
-            $isHoursFormat = strpos($headerLower[$durationIndex], 'jam') !== false ||
-                strpos($headerLower[$durationIndex], 'hour') !== false ||
-                strpos($headerLower[$durationIndex], 'durasi') !== false;
-
-            // Pre-load all users for name matching (case-insensitive)
-            $allUsers = User::where('role', 'user')->get()->keyBy(function ($user) {
-                return strtolower(trim($user->name));
-            });
-
-            $report = TiktokReport::create([
-                'filename' => $storedFilename,
-                'original_filename' => $originalFilename,
-                'report_date' => now(),
-                'uploaded_by' => auth()->id(),
-                'total_records' => count($dataRows),
-                'total_duration_minutes' => 0,
-            ]);
-
-            $totalDurationMinutes = 0;
-            $importedCount = 0;
-            $matchedCount = 0;
-
-            // Process each data row
-            foreach ($dataRows as $row) {
-                // Skip empty rows or rows without date
-                if (!isset($row[$dateIndex]) || empty(trim(strval($row[$dateIndex])))) {
-                    continue;
-                }
-
-                // Parse date
-                $dateValue = trim(strval($row[$dateIndex]));
-                $liveDate = $this->parseIndonesianDate($dateValue);
-
-                if (!$liveDate) {
-                    continue; // Skip rows with unparseable dates
-                }
-
-                // Parse duration
-                $durationValue = isset($row[$durationIndex]) ? $row[$durationIndex] : 0;
-                $durationMinutes = $this->parseDuration($durationValue, $isHoursFormat);
-
-                // Parse name and match user
-                $userId = null;
-                $matchedAttendanceId = null;
-                $matchStatus = 'needs_verification';
-                $attendanceDurationMinutes = null;
-
-                if ($nameIndex !== null && isset($row[$nameIndex]) && !empty(trim(strval($row[$nameIndex])))) {
-                    $userName = strtolower(trim(strval($row[$nameIndex])));
-
-                    // Try exact match first
-                    if (isset($allUsers[$userName])) {
-                        $userId = $allUsers[$userName]->id;
-                    } else {
-                        // Try partial match (contains)
-                        foreach ($allUsers as $nameLower => $user) {
-                            if (strpos($nameLower, $userName) !== false || strpos($userName, $nameLower) !== false) {
-                                $userId = $user->id;
-                                break;
-                            }
-                        }
-                    }
-
-                    // If user found, try to match with attendance
-                    if ($userId) {
-                        $attendance = Attendance::where('user_id', $userId)
-                            ->whereDate('attendance_date', $liveDate)
-                            ->first();
-
-                        if ($attendance) {
-                            $matchedAttendanceId = $attendance->id;
-                            $attendanceDurationMinutes = $attendance->live_duration_minutes;
-
-                            // Auto-determine match status based on duration difference
-                            $diff = abs($durationMinutes - $attendanceDurationMinutes);
-                            $tolerance = 30; // 30 minutes tolerance
-
-                            if ($diff <= $tolerance) {
-                                $matchStatus = 'matched';
-                                $matchedCount++;
-                            } else {
-                                $matchStatus = 'needs_verification';
-                            }
-                        }
-                    }
-                }
-
-                if ($durationMinutes > 0) {
-                    TiktokReportDetail::create([
-                        'tiktok_report_id' => $report->id,
-                        'user_id' => $userId,
-                        'live_date' => $liveDate,
-                        'duration_minutes' => $durationMinutes,
-                        'match_status' => $matchStatus,
-                        'matched_attendance_id' => $matchedAttendanceId,
-                        'attendance_duration_minutes' => $attendanceDurationMinutes,
-                    ]);
-
-                    $totalDurationMinutes += $durationMinutes;
-                    $importedCount++;
-                }
-            }
-
-            // Update total duration
-            $report->update([
-                'total_duration_minutes' => $totalDurationMinutes,
-                'total_records' => $importedCount,
-            ]);
-
-            $message = "Report berhasil diupload. {$importedCount} data berhasil diimport (Total: " . number_format($totalDurationMinutes / 60, 1) . " jam).";
-            if ($matchedCount > 0) {
-                $message .= " {$matchedCount} data otomatis cocok dengan absensi.";
-            }
-
-            return redirect()->route('admin.tiktok-reports.index')
-                ->with('success', $message);
-
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memproses file: ' . $e->getMessage());
         }
+
+        // Build combined message
+        $flashMessages = [];
+
+        if (!empty($successMessages)) {
+            $totalFiles = count($successMessages);
+            $flash = "✅ {$totalFiles} file berhasil diupload:\n" . implode("\n", $successMessages);
+            $flashMessages['success'] = $flash;
+        }
+
+        if (!empty($errorMessages)) {
+            $flashMessages['error'] = implode("\n", $errorMessages);
+        }
+
+        if (empty($successMessages) && !empty($errorMessages)) {
+            return back()->with('error', implode("\n", $errorMessages));
+        }
+
+        return redirect()->route('admin.tiktok-reports.index')
+            ->with($flashMessages);
+    }
+
+    /**
+     * Process a single Excel file and create report + details
+     */
+    private function processExcelFile($file, $storedFilename, $originalFilename, $allUsers): string
+    {
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $worksheet = $spreadsheet->getActiveSheet();
+        $data = $worksheet->toArray();
+
+        // Find header row - search for row containing keywords from either English or Indonesian format
+        $headerRowIndex = 0;
+        $header = null;
+
+        for ($i = 0; $i < min(10, count($data)); $i++) {
+            $rowLower = array_map('strtolower', array_map('trim', array_map('strval', $data[$i])));
+            $rowString = implode(' ', $rowLower);
+
+            if (
+                strpos($rowString, 'durasi') !== false ||
+                strpos($rowString, 'duration') !== false ||
+                strpos($rowString, 'tanggal') !== false ||
+                strpos($rowString, 'start time') !== false ||
+                strpos($rowString, 'waktu mulai') !== false
+            ) {
+                $headerRowIndex = $i;
+                $header = $data[$i];
+                break;
+            }
+        }
+
+        if ($header === null) {
+            throw new \Exception('Header tidak ditemukan. Pastikan file memiliki kolom "Duration/Durasi" dan "Start time/Waktu mulai".');
+        }
+
+        // Get data rows (after header)
+        $dataRows = array_slice($data, $headerRowIndex + 1);
+
+        // Convert header to lowercase for matching
+        $headerLower = array_map('strtolower', array_map('trim', array_map('strval', $header)));
+
+        // Find column indices - support both Indonesian and English formats
+        $nameIndex = null;
+        $durationIndex = null;
+        $dateIndex = null;
+
+        foreach ($headerLower as $index => $col) {
+            // Name column: "nama", "user", "name", "livestream" (EN), "streaming langsung" (ID)
+            if (
+                $nameIndex === null && (
+                    strpos($col, 'nama') !== false ||
+                    strpos($col, 'user') !== false ||
+                    $col === 'name' ||
+                    $col === 'livestream' ||
+                    strpos($col, 'streaming') !== false
+                )
+            ) {
+                $nameIndex = $index;
+            }
+            // Duration column: "durasi" (Indonesian) or "duration" (English)
+            if ($durationIndex === null && (strpos($col, 'durasi') !== false || strpos($col, 'duration') !== false)) {
+                $durationIndex = $index;
+            }
+            // Date column: "tanggal" (ID), "waktu mulai" (ID), "start time" (EN), "date" (EN)
+            if (
+                $dateIndex === null && (
+                    strpos($col, 'tanggal') !== false ||
+                    strpos($col, 'waktu') !== false ||
+                    strpos($col, 'start') !== false ||
+                    $col === 'date'
+                )
+            ) {
+                $dateIndex = $index;
+            }
+        }
+
+        if ($durationIndex === null) {
+            throw new \Exception('Kolom "Duration" / "Durasi" tidak ditemukan di file.');
+        }
+        if ($dateIndex === null) {
+            throw new \Exception('Kolom "Start time" / "Waktu mulai" / "Tanggal" tidak ditemukan di file.');
+        }
+
+        // Check if duration is in hours (JAM) or seconds
+        // "Durasi (Jam)" or column containing "jam"/"hour" = hours format
+        // "Duration" or "Durasi" alone = seconds format (raw TikTok data)
+        $durationHeader = $headerLower[$durationIndex];
+        $isHoursFormat = strpos($durationHeader, 'jam') !== false ||
+            strpos($durationHeader, 'hour') !== false;
+
+        $report = TiktokReport::create([
+            'filename' => $storedFilename,
+            'original_filename' => $originalFilename,
+            'report_date' => now(),
+            'uploaded_by' => auth()->id(),
+            'total_records' => count($dataRows),
+            'total_duration_minutes' => 0,
+        ]);
+
+        $totalDurationMinutes = 0;
+        $importedCount = 0;
+        $matchedCount = 0;
+
+        // Process each data row
+        foreach ($dataRows as $row) {
+            // Skip empty rows or rows without date
+            if (!isset($row[$dateIndex]) || empty(trim(strval($row[$dateIndex])))) {
+                continue;
+            }
+
+            // Parse date
+            $dateValue = trim(strval($row[$dateIndex]));
+            $liveDate = $this->parseIndonesianDate($dateValue);
+
+            if (!$liveDate) {
+                continue; // Skip rows with unparseable dates
+            }
+
+            // Parse duration
+            $durationValue = isset($row[$durationIndex]) ? $row[$durationIndex] : 0;
+            $durationMinutes = $this->parseDuration($durationValue, $isHoursFormat);
+
+            // Parse name and match user
+            $userId = null;
+            $matchedAttendanceId = null;
+            $matchStatus = 'needs_verification';
+            $attendanceDurationMinutes = null;
+
+            if ($nameIndex !== null && isset($row[$nameIndex]) && !empty(trim(strval($row[$nameIndex])))) {
+                $userName = strtolower(trim(strval($row[$nameIndex])));
+
+                // Try exact match first
+                if (isset($allUsers[$userName])) {
+                    $userId = $allUsers[$userName]->id;
+                } else {
+                    // Try partial match (contains)
+                    foreach ($allUsers as $nameLower => $user) {
+                        if (strpos($nameLower, $userName) !== false || strpos($userName, $nameLower) !== false) {
+                            $userId = $user->id;
+                            break;
+                        }
+                    }
+                }
+
+                // If user found, try to match with attendance
+                if ($userId) {
+                    $attendance = Attendance::where('user_id', $userId)
+                        ->whereDate('attendance_date', $liveDate)
+                        ->first();
+
+                    if ($attendance) {
+                        $matchedAttendanceId = $attendance->id;
+                        $attendanceDurationMinutes = $attendance->live_duration_minutes;
+
+                        // Auto-determine match status based on duration difference
+                        $diff = abs($durationMinutes - $attendanceDurationMinutes);
+                        $tolerance = 30; // 30 minutes tolerance
+
+                        if ($diff <= $tolerance) {
+                            $matchStatus = 'matched';
+                            $matchedCount++;
+                        } else {
+                            $matchStatus = 'needs_verification';
+                        }
+                    }
+                }
+            }
+
+            if ($durationMinutes > 0) {
+                TiktokReportDetail::create([
+                    'tiktok_report_id' => $report->id,
+                    'user_id' => $userId,
+                    'live_date' => $liveDate,
+                    'duration_minutes' => $durationMinutes,
+                    'match_status' => $matchStatus,
+                    'matched_attendance_id' => $matchedAttendanceId,
+                    'attendance_duration_minutes' => $attendanceDurationMinutes,
+                ]);
+
+                $totalDurationMinutes += $durationMinutes;
+                $importedCount++;
+            }
+        }
+
+        // Update total duration
+        $report->update([
+            'total_duration_minutes' => $totalDurationMinutes,
+            'total_records' => $importedCount,
+        ]);
+
+        $totalRows = count($dataRows);
+        $message = "📄 {$originalFilename}: {$importedCount}/{$totalRows} baris diimport (" . number_format($totalDurationMinutes / 60, 1) . " jam)";
+        if ($matchedCount > 0) {
+            $message .= " — {$matchedCount} cocok dengan absensi";
+        }
+
+        return $message;
     }
 
     /**

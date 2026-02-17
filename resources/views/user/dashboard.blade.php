@@ -11,7 +11,8 @@
                 <div>
                     <h2 class="mb-1">Halo, {{ auth()->user()->name }}!</h2>
                     <p class="text-muted mb-0">{{ auth()->user()->task ?? 'User' }} •
-                        {{ now()->translatedFormat('l, d F Y') }}</p>
+                        {{ now()->translatedFormat('l, d F Y') }}
+                    </p>
                 </div>
             </div>
         </div>
@@ -91,7 +92,7 @@
                 </svg>
             </div>
             <div>
-                <div class="stat-label">Estimasi Gaji</div>
+                <div class="stat-label">Gaji</div>
                 <div class="stat-number">Rp {{ number_format($stats['estimated_salary'], 0, ',', '.') }}</div>
             </div>
         </div>
@@ -240,9 +241,21 @@
                             <div class="text-sm text-muted">{{ $attendance->formatted_duration }}</div>
                         </div>
                         @if($attendance->status === 'validated')
-                            <span class="badge badge-success">Tervalidasi</span>
+                            <span class="badge badge-success" title="Locked by Admin" style="padding: 0.25rem 0.5rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    width="16" height="16">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </span>
                         @elseif($attendance->status === 'pending')
-                            <span class="badge badge-warning">Pending</span>
+                            <span class="badge badge-warning" title="Open (Pending Validation)" style="padding: 0.25rem 0.5rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    width="16" height="16">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                </svg>
+                            </span>
                         @else
                             <span class="badge badge-danger">Ditolak</span>
                         @endif

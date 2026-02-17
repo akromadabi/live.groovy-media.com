@@ -127,9 +127,9 @@
                                 @elseif($diff == 0)
                                     <span class="badge badge-success">Sesuai</span>
                                 @elseif($diff > 0)
-                                    <span class="badge badge-info">Absen +{{ number_format($diffHours, 1) }} jam</span>
+                                    <span class="badge badge-danger">Absen +{{ number_format($diffHours, 1) }} jam</span>
                                 @else
-                                    <span class="badge badge-danger">TikTok +{{ number_format($diffHours, 1) }} jam</span>
+                                    <span class="badge badge-primary">TikTok +{{ number_format($diffHours, 1) }} jam</span>
                                 @endif
                             </td>
                         </tr>
@@ -155,8 +155,8 @@
                 <thead>
                     <tr>
                         <th>Nama File</th>
-                        <th>Tanggal Upload</th>
-                        <th>Total Data</th>
+                        <th class="hide-on-mobile">Tanggal Upload</th>
+                        <th class="hide-on-mobile">Total Data</th>
                         <th>Total Durasi</th>
                         <th>Aksi</th>
                     </tr>
@@ -168,8 +168,8 @@
                                 <div class="font-medium">{{ $file->original_filename ?? $file->filename }}</div>
                                 <div class="text-xs text-muted">oleh {{ $file->uploader->name ?? 'Unknown' }}</div>
                             </td>
-                            <td>{{ $file->created_at->format('d M Y H:i') }}</td>
-                            <td>{{ $file->total_records ?? $file->details()->count() }} data</td>
+                            <td class="hide-on-mobile">{{ $file->created_at->format('d M Y H:i') }}</td>
+                            <td class="hide-on-mobile">{{ $file->total_records ?? $file->details()->count() }} data</td>
                             <td>{{ number_format(($file->total_duration_minutes ?? $file->details()->sum('duration_minutes')) / 60, 1) }}
                                 jam</td>
                             <td>
@@ -217,8 +217,27 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="form-label">File Excel (.xlsx)</label>
-                        <input type="file" name="report_file" class="form-control" accept=".xlsx,.xls" required>
-                        <div class="form-hint">Upload file report dari TikTok dalam format Excel</div>
+                        <div id="drop-zone"
+                            style="border: 2px dashed var(--border-color, #ddd); border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--card-bg, #f8f9fa);"
+                            onclick="document.getElementById('report-files-input').click()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                width="40" height="40" style="margin: 0 auto 0.5rem; display: block; opacity: 0.5;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <div style="font-weight: 600; margin-bottom: 0.25rem;">Klik atau drag file ke sini</div>
+                            <div style="font-size: 0.85rem; opacity: 0.7;">Bisa pilih lebih dari 1 file Excel sekaligus
+                            </div>
+                        </div>
+                        <input type="file" name="report_files[]" id="report-files-input" class="form-control"
+                            accept=".xlsx,.xls" multiple required style="display: none;">
+                        <div id="selected-files-list" style="margin-top: 0.75rem; display: none;">
+                            <div
+                                style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--primary-color, #4f46e5);">
+                                📎 <span id="file-count">0</span> file dipilih:
+                            </div>
+                            <div id="file-names" style="font-size: 0.8rem; max-height: 150px; overflow-y: auto;"></div>
+                        </div>
                     </div>
                     <div class="alert alert-info mt-3">
                         <strong>📌 Format File:</strong><br>
@@ -229,7 +248,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-modal-close>Batal</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="upload-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -240,4 +259,74 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('report-files-input');
+            const fileList = document.getElementById('selected-files-list');
+            const fileNames = document.getElementById('file-names');
+            const fileCount = document.getElementById('file-count');
+            const dropZone = document.getElementById('drop-zone');
+            const uploadBtn = document.getElementById('upload-btn');
+
+            fileInput.addEventListener('change', function () {
+                updateFileList(this.files);
+            });
+
+            // Drag and drop
+            dropZone.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--primary-color, #4f46e5)';
+                this.style.background = 'var(--primary-light, rgba(79,70,229,0.05))';
+            });
+
+            dropZone.addEventListener('dragleave', function (e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--border-color, #ddd)';
+                this.style.background = 'var(--card-bg, #f8f9fa)';
+            });
+
+            dropZone.addEventListener('drop', function (e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--border-color, #ddd)';
+                this.style.background = 'var(--card-bg, #f8f9fa)';
+
+                const dt = new DataTransfer();
+                for (let f of e.dataTransfer.files) {
+                    if (f.name.match(/\.(xlsx|xls)$/i)) {
+                        dt.items.add(f);
+                    }
+                }
+                fileInput.files = dt.files;
+                updateFileList(dt.files);
+            });
+
+            function updateFileList(files) {
+                if (files.length > 0) {
+                    fileList.style.display = 'block';
+                    fileCount.textContent = files.length;
+                    fileNames.innerHTML = '';
+                    for (let i = 0; i < files.length; i++) {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'padding: 0.35rem 0.6rem; background: var(--card-bg, #f0f0f0); border-radius: 6px; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem;';
+                        div.innerHTML = '<span style="color: #22c55e;">📄</span> ' + files[i].name +
+                            ' <span style="opacity:0.5; font-size:0.75rem;">(' + (files[i].size / 1024).toFixed(0) + ' KB)</span>';
+                        fileNames.appendChild(div);
+                    }
+                    dropZone.querySelector('div:first-of-type').textContent = files.length + ' file dipilih';
+                    uploadBtn.textContent = 'Upload ' + files.length + ' File & Proses';
+                } else {
+                    fileList.style.display = 'none';
+                    dropZone.querySelector('div:first-of-type').textContent = 'Klik atau drag file ke sini';
+                }
+            }
+
+            // Disable button on submit to prevent double upload
+            const form = uploadBtn.closest('form');
+            form.addEventListener('submit', function () {
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Memproses...';
+            });
+        });
+    </script>
 @endsection

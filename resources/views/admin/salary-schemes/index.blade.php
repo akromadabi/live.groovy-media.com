@@ -11,8 +11,8 @@
                         <th>Pengguna</th>
                         <th>Tugas</th>
                         <th>Gaji/Jam</th>
-                        <th>Gaji/Konten Edit</th>
-                        <th>Gaji/Konten Live</th>
+                        <th class="hide-on-mobile">Konten Edit</th>
+                        <th class="hide-on-mobile">Konten Live</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -27,8 +27,10 @@
                             </td>
                             <td>{{ $user->task ?? '-' }}</td>
                             <td>Rp {{ number_format($user->salaryScheme->hourly_rate ?? 0, 0, ',', '.') }}</td>
-                            <td>Rp {{ number_format($user->salaryScheme->content_edit_rate ?? 0, 0, ',', '.') }}</td>
-                            <td>Rp {{ number_format($user->salaryScheme->content_live_rate ?? 0, 0, ',', '.') }}</td>
+                            <td class="hide-on-mobile">Rp
+                                {{ number_format($user->salaryScheme->content_edit_rate ?? 0, 0, ',', '.') }}</td>
+                            <td class="hide-on-mobile">Rp
+                                {{ number_format($user->salaryScheme->content_live_rate ?? 0, 0, ',', '.') }}</td>
                             <td>
                                 <a href="{{ route('admin.salary-schemes.edit', $user) }}" class="btn btn-secondary btn-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"

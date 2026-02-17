@@ -178,6 +178,7 @@ class DashboardController extends Controller
         $t2Salary = 0;
 
         if ($scheme) {
+            // Calculate base salary for T1
             foreach ($t1Attendances as $a) {
                 $hours = $a->live_duration_minutes / 60;
                 $t1Salary += $hours * $scheme->hourly_rate;
@@ -185,11 +186,33 @@ class DashboardController extends Controller
                 $t1Salary += $a->content_live_count * $scheme->content_live_rate;
             }
 
+            // Calculate base salary for T2
             foreach ($t2Attendances as $a) {
                 $hours = $a->live_duration_minutes / 60;
                 $t2Salary += $hours * $scheme->hourly_rate;
                 $t2Salary += $a->content_edit_count * $scheme->content_edit_rate;
                 $t2Salary += $a->content_live_count * $scheme->content_live_rate;
+            }
+
+            // T1: no bonus (month not finished yet)
+            // T2: check full month hours (T1+T2) against monthly target
+            $fullMonthHours = $t1Hours + $t2Hours;
+            $targetMet = $fullMonthHours >= (float) $scheme->monthly_target_hours;
+
+            if ($targetMet) {
+                // Bonus from entire month's sales goes to T2
+                $allAttendances = $t1Attendances->merge($t2Attendances);
+                $dailySales = [];
+                foreach ($allAttendances as $a) {
+                    $date = $a->attendance_date->toDateString();
+                    if (!isset($dailySales[$date])) {
+                        $dailySales[$date] = 0;
+                    }
+                    $dailySales[$date] += $a->sales_count;
+                }
+                foreach ($dailySales as $salesCount) {
+                    $t2Salary += \App\Models\BonusTier::getBonusForSales($salesCount);
+                }
             }
         }
 
@@ -207,25 +230,45 @@ class DashboardController extends Controller
     private function calculatePendingSalary($user)
     {
         $scheme = $user->salaryScheme;
-        if (!$scheme)
+        if (!$scheme) {
             return 0;
+        }
 
         // Get last salary end date
         $lastSalary = $user->salaries()->orderByDesc('period_end')->first();
         $startDate = $lastSalary ? $lastSalary->period_end->addDay() : Carbon::now()->startOfMonth();
 
         $attendances = $user->attendances()
-            ->where('status', 'validated')
+            ->whereIn('status', ['pending', 'validated'])
             ->where('attendance_date', '>=', $startDate)
             ->get();
 
         $total = 0;
+        $totalHours = 0;
+        $dailySales = [];
+
         foreach ($attendances as $attendance) {
             $hours = $attendance->live_duration_minutes / 60;
+            $totalHours += $hours;
             $total += $hours * $scheme->hourly_rate;
             $total += $attendance->content_edit_count * $scheme->content_edit_rate;
             $total += $attendance->content_live_count * $scheme->content_live_rate;
-            $total += $attendance->sales_count * $scheme->sales_bonus_nominal;
+
+            // Group daily sales for bonus calculation
+            $date = $attendance->attendance_date->toDateString();
+            if (!isset($dailySales[$date])) {
+                $dailySales[$date] = 0;
+            }
+            $dailySales[$date] += $attendance->sales_count;
+        }
+
+        // Only add sales bonus if target hours are met
+        // Use full monthly target since this calculates across all pending time
+        $targetMet = $totalHours >= (float) $scheme->monthly_target_hours;
+        if ($targetMet) {
+            foreach ($dailySales as $salesCount) {
+                $total += \App\Models\BonusTier::getBonusForSales($salesCount);
+            }
         }
 
         return round($total, 0);

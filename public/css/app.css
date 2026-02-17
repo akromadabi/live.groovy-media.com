@@ -1206,7 +1206,15 @@ a:hover {
     align-items: flex-end;
 }
 
-.filter-bar .form-group {
+.filter-bar-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-bar .form-group,
+.filter-bar-grid .form-group {
     margin-bottom: 0;
     min-width: 150px;
 }
@@ -1906,9 +1914,6 @@ a:hover {
 /* ============================================
    Attendance List
    ============================================ */
-.attendance-list {
-    overflow: hidden;
-}
 
 .attendance-item {
     display: flex;
@@ -2385,10 +2390,11 @@ a:hover {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         max-width: 100%;
+        margin-bottom: 1rem;
     }
 
     .table {
-        min-width: 600px;
+        width: 100%;
     }
 
     /* Card adjustments */
@@ -2535,7 +2541,7 @@ a:hover {
     /* Table text smaller */
     .table th,
     .table td {
-        padding: 0.5rem;
+        padding: 0.5rem 0.375rem;
         font-size: 0.75rem;
     }
 
@@ -2972,6 +2978,11 @@ a:hover {
     font-weight: 500;
 }
 
+.attendance-list {
+    display: flex;
+    flex-direction: column;
+}
+
 .term-body {
     display: flex;
     flex-direction: column;
@@ -3265,15 +3276,15 @@ a:hover {
     box-shadow: var(--shadow-sm);
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
     background-color: var(--success);
 }
 
-.toggle-switch input:checked + .toggle-slider::before {
+.toggle-switch input:checked+.toggle-slider::before {
     transform: translateX(22px);
 }
 
-.toggle-switch input:focus + .toggle-slider {
+.toggle-switch input:focus+.toggle-slider {
     box-shadow: 0 0 0 3px var(--primary-light);
 }
 
@@ -3317,4 +3328,157 @@ a:hover {
 .password-toggle:focus {
     outline: none;
     color: var(--primary);
+}
+
+/* ============================================
+   Mobile Responsive Utilities
+   ============================================ */
+@media (max-width: 768px) {
+    .hide-on-mobile {
+        display: none !important;
+    }
+
+    .show-on-mobile {
+        display: inline-flex !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .show-on-mobile {
+        display: none !important;
+    }
+}
+
+/* Mobile Table Optimizations - Fit in One Screen */
+@media (max-width: 768px) {
+    .table-container {
+        overflow-x: auto !important;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Better table layout on mobile */
+    .table {
+        width: 100%;
+        min-width: max-content;
+        /* Ensure it doesn't squeeze too much */
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem;
+        white-space: nowrap;
+        /* Keep data on one line for tables */
+    }
+
+    /* Important text that SHOULD wrap */
+    .table .text-wrap {
+        white-space: normal !important;
+        min-width: 120px;
+    }
+
+    /* Very compact action buttons */
+    .action-btns {
+        display: flex;
+        gap: 0.125rem;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+    }
+
+    .btn-icon {
+        padding: 0.25rem !important;
+        min-width: 24px;
+        height: 24px;
+    }
+
+    .btn-icon svg {
+        width: 10px !important;
+        height: 10px !important;
+    }
+}
+
+/* Action Menu Dropdown */
+.dropdown-action {
+    position: relative;
+    display: inline-block;
+}
+
+.action-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    min-width: 150px;
+    z-index: 1000;
+}
+
+.action-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition);
+    text-decoration: none;
+}
+
+.action-menu-item:hover {
+    background: var(--bg-secondary);
+}
+
+.action-menu-item.action-success:hover {
+    background: var(--success);
+    color: white;
+}
+
+.action-menu-item.action-danger:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.action-menu-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Detail Grid */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.detail-value {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.detail-row td {
+    border-bottom: none !important;
 }

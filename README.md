@@ -1,59 +1,162 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# UI Updates Deployment Package
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 📦 Package Information
 
-## About Laravel
+**Created:** 2026-02-02 22:38
+**Package:** ui-updates-20260202-2238
+**Total Files:** 18 files
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📋 Files Included
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Controllers (4 files)
+1. `app/Http/Controllers/Admin/AttendanceController.php`
+2. `app/Http/Controllers/Admin/SalaryController.php`
+3. `app/Http/Controllers/Admin/SalaryRecordController.php`
+4. `app/Http/Controllers/User/DashboardController.php`
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Models (2 files)
+5. `app/Models/BonusTier.php`
+6. `app/Models/Salary.php`
 
-## Learning Laravel
+### CSS (1 file)
+7. `public/css/app.css` ⚠️ **IMPORTANT: Mobile table optimizations**
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Admin Views (6 files)
+8. `resources/views/admin/attendances/index.blade.php` ⚠️ **Mobile table fix**
+9. `resources/views/admin/salary-records/index.blade.php`
+10. `resources/views/admin/salary-records/slip.blade.php`
+11. `resources/views/admin/tiktok-reports/index.blade.php`
+12. `resources/views/admin/users/create.blade.php`
+13. `resources/views/admin/users/edit.blade.php`
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Layout Partials (2 files)
+14. `resources/views/layouts/partials/bottom-nav.blade.php`
+15. `resources/views/layouts/partials/sidebar.blade.php`
 
-## Laravel Sponsors
+### User Views (2 files)
+16. `resources/views/user/attendances/index.blade.php`
+17. `resources/views/user/dashboard.blade.php`
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Routes (1 file)
+18. `routes/web.php`
 
-### Premium Partners
+## 🎯 Main Changes
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Mobile Optimizations
+- ✅ Admin attendance table now fits in one screen on mobile
+- ✅ Removed horizontal scroll
+- ✅ Hidden less important columns on mobile
+- ✅ Compact button sizes and spacing
 
-## Contributing
+### UI Improvements
+- ✅ Various view improvements
+- ✅ Controller updates
+- ✅ Model enhancements
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🚀 Deployment Instructions
 
-## Code of Conduct
+### Quick Upload Guide
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Upload each file to its corresponding location on hosting:
 
-## Security Vulnerabilities
+```
+Local File                                    →  Upload To
+─────────────────────────────────────────────────────────────────────
+app/Http/Controllers/Admin/
+  AttendanceController.php                    →  app/Http/Controllers/Admin/
+  SalaryController.php                        →  app/Http/Controllers/Admin/
+  SalaryRecordController.php                  →  app/Http/Controllers/Admin/
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+app/Http/Controllers/User/
+  DashboardController.php                     →  app/Http/Controllers/User/
 
-## License
+app/Models/
+  BonusTier.php                               →  app/Models/
+  Salary.php                                  →  app/Models/
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+public/css/
+  app.css                                     →  public/css/
+
+resources/views/admin/attendances/
+  index.blade.php                             →  resources/views/admin/attendances/
+
+resources/views/admin/salary-records/
+  index.blade.php                             →  resources/views/admin/salary-records/
+  slip.blade.php                              →  resources/views/admin/salary-records/
+
+resources/views/admin/tiktok-reports/
+  index.blade.php                             →  resources/views/admin/tiktok-reports/
+
+resources/views/admin/users/
+  create.blade.php                            →  resources/views/admin/users/
+  edit.blade.php                              →  resources/views/admin/users/
+
+resources/views/layouts/partials/
+  bottom-nav.blade.php                        →  resources/views/layouts/partials/
+  sidebar.blade.php                           →  resources/views/layouts/partials/
+
+resources/views/user/
+  attendances/index.blade.php                 →  resources/views/user/attendances/
+  dashboard.blade.php                         →  resources/views/user/
+
+routes/
+  web.php                                     →  routes/
+```
+
+### After Upload
+
+Run these commands via SSH or cPanel Terminal:
+
+```bash
+cd /path/to/your/laravel
+php artisan route:clear
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+```
+
+## ✅ Verification
+
+After deployment, test:
+
+1. **Mobile View:**
+   - Open admin attendance page on mobile
+   - Table should fit in one screen without horizontal scroll
+   - All action buttons should be visible
+
+2. **Desktop View:**
+   - All pages should work normally
+   - No layout issues
+
+3. **Functionality:**
+   - All features should work as before
+   - No errors in browser console
+
+## ⚠️ Important Notes
+
+1. **Backup First!** Always backup existing files before uploading
+2. **Test on Staging** if available
+3. **Clear Browser Cache** after deployment (Ctrl+F5)
+4. **Check Logs** if any errors occur: `storage/logs/laravel.log`
+
+## 🔄 Rollback
+
+If issues occur, restore from backup:
+- Backup location: `storage/backups/` (if using deploy script)
+- Or re-upload original files
+
+## 📝 Deployment Checklist
+
+- [ ] Backup existing files
+- [ ] Upload all 18 files to correct locations
+- [ ] Clear all Laravel caches
+- [ ] Test mobile view (admin attendance)
+- [ ] Test desktop view
+- [ ] Check browser console for errors
+- [ ] Verify all features work correctly
+
+---
+
+**Status:** Ready for deployment
+**Priority:** Medium
+**Estimated Time:** 15-20 minutes

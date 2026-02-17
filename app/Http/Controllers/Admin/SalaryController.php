@@ -145,9 +145,9 @@ class SalaryController extends Controller
     {
         $scheme = $user->salaryScheme;
 
-        // Get validated attendances in period
+        // Get validated and pending attendances in period
         $attendances = Attendance::where('user_id', $user->id)
-            ->where('status', 'validated')
+            ->whereIn('status', ['pending', 'validated'])
             ->whereBetween('attendance_date', [$startDate, $endDate])
             ->get();
 
@@ -168,17 +168,28 @@ class SalaryController extends Controller
         $monthEnd = $monthStart->copy()->endOfMonth();
 
         $monthlyMinutes = Attendance::where('user_id', $user->id)
-            ->where('status', 'validated')
+            ->whereIn('status', ['pending', 'validated'])
             ->whereBetween('attendance_date', [$monthStart, $monthEnd])
             ->sum('live_duration_minutes');
 
         $monthlyHours = $monthlyMinutes / 60;
         $targetMet = $monthlyHours >= $scheme->monthly_target_hours;
 
-        // Get sales bonus from tier (only if target met)
+        // Calculate daily sales bonus (only if target met, grouped by date)
         $salesBonus = 0;
-        if ($targetMet && $totalSales > 0) {
-            $salesBonus = BonusTier::getBonusForSales($totalSales);
+        if ($targetMet) {
+            $dailySales = [];
+            foreach ($attendances as $attendance) {
+                $date = $attendance->attendance_date->toDateString();
+                if (!isset($dailySales[$date])) {
+                    $dailySales[$date] = 0;
+                }
+                $dailySales[$date] += $attendance->sales_count;
+            }
+
+            foreach ($dailySales as $salesCount) {
+                $salesBonus += BonusTier::getBonusForSales($salesCount);
+            }
         }
 
         // Calculate total

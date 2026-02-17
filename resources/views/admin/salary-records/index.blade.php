@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Rekap Gaji')
+@section('title', 'Gaji')
 
 @section('content')
     <!-- Filter Bar -->
@@ -121,13 +121,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Generate Rekap
+            Generate Gaji
         </button>
         <a href="{{ route('admin.salary-records.create') }}" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Tambah Rekap Gaji
+            Tambah Data Gaji
         </a>
     </div>
 
@@ -135,14 +135,14 @@
     <div class="modal-overlay" id="generateModal">
         <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
-                <h3 class="modal-title">Generate Rekap Gaji</h3>
+                <h3 class="modal-title">Generate Gaji</h3>
                 <button type="button" class="modal-close"
                     onclick="document.getElementById('generateModal').classList.remove('active')">&times;</button>
             </div>
             <form action="{{ route('admin.salary-records.generate-all') }}" method="POST">
                 @csrf
                 <div class="modal-body">
-                    <p class="text-muted mb-4">Generate rekap gaji otomatis berdasarkan data absensi tervalidasi.</p>
+                    <p class="text-muted mb-4">Generate gaji otomatis berdasarkan data absensi tervalidasi.</p>
 
                     <div class="form-group">
                         <label class="form-label">Tahun</label>
@@ -205,9 +205,9 @@
                         </th>
                         <th>User</th>
                         <th>Periode</th>
-                        <th>Detail</th>
+                        <th class="hide-on-mobile">Detail</th>
                         <th>Gaji</th>
-                        <th>Status</th>
+                        <th class="hide-on-mobile">Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -232,20 +232,71 @@
                                 <span class="term-badge {{ $record->term == '1' ? 't1' : 't2' }}"
                                     style="font-size: 0.65rem;">T{{ $record->term }}</span>
                             </td>
-                            <td>
-                                <div class="text-xs" style="line-height: 1.4;">
-                                    <div><strong>{{ number_format($record->total_hours, 1) }}</strong> jam</div>
-                                    <div>{{ $record->total_live_count }} live • {{ $record->total_sales }} penjualan</div>
-                                    @if($record->total_content_edit || $record->total_content_live)
-                                        <div>{{ $record->total_content_edit }} edit • {{ $record->total_content_live }} konten live
-                                        </div>
-                                    @endif
+                            <td class="hide-on-mobile">
+                                <div class="text-xs" style="line-height: 1.6;">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor" style="width: 12px; height: 12px; color: var(--primary);">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <strong>{{ number_format($record->total_hours, 1) }}</strong> jam
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor" style="width: 12px; height: 12px; color: var(--warning);">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                        {{ $record->total_content_live }} live
+                                        <span style="margin: 0 0.25rem;">•</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor" style="width: 12px; height: 12px; color: var(--success);">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        {{ $record->total_content_edit }} edit
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor" style="width: 12px; height: 12px; color: var(--danger);">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                        {{ $record->total_sales }} penjualan
+                                    </div>
+                                    @php
+                                        // Check if bonus was achieved (need to check monthly target)
+                                        $user = $record->user;
+                                        $scheme = $user->salaryScheme;
+                                        $bonusAchieved = false;
+
+                                        if ($scheme) {
+                                            $monthStart = \Carbon\Carbon::createFromDate($record->year, $record->month, 1)->startOfDay();
+                                            $monthEnd = $monthStart->copy()->endOfMonth();
+
+                                            $monthlyMinutes = \App\Models\Attendance::where('user_id', $user->id)
+                                                ->whereIn('status', ['pending', 'validated'])
+                                                ->whereBetween('attendance_date', [$monthStart, $monthEnd])
+                                                ->sum('live_duration_minutes');
+
+                                            $monthlyHours = $monthlyMinutes / 60;
+                                            $bonusAchieved = $monthlyHours >= $scheme->monthly_target_hours;
+                                        }
+                                    @endphp
+                                    <div style="display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem;">
+                                        @if($bonusAchieved)
+                                            <span style="color: var(--success); font-weight: 600;">✓ Bonus tercapai</span>
+                                        @else
+                                            <span style="color: var(--text-muted); font-size: 0.75rem;">Target belum tercapai</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                             <td class="font-medium" style="color: var(--success);">
                                 {{ $record->formatted_amount }}
                             </td>
-                            <td>
+                            <td class="hide-on-mobile">
                                 @if($record->status === 'paid')
                                     <span class="badge badge-success">Dibayar</span>
                                 @else
@@ -347,7 +398,8 @@
             // Open each slip in new tab with auto-download enabled
             ids.forEach((id, index) => {
                 setTimeout(() => {
-                    window.open(`{{ url('admin/salary-records') }}/` + id + '/slip?auto=1', '_blank');
+                    const url = "{{ route('admin.salary-records.slip', ['id' => '__ID__']) }}".replace('__ID__', id);
+                    window.open(url + '?auto=1', '_blank');
                 }, index * 1500); // Increased delay for stable downloads
             });
         }

@@ -183,16 +183,34 @@
 
                                 // Calculate difference: positive = TikTok more, negative = Absen more
                                 $totalDiff = $totalTiktok - $totalAbsen;
+
+                                // Helper function to format duration
+                                $formatDuration = function ($minutes) {
+                                    $hours = floor($minutes / 60);
+                                    $mins = $minutes % 60;
+
+                                    if ($hours > 0 && $mins > 0) {
+                                        return $hours . ' j ' . $mins . ' m';
+                                    } elseif ($hours > 0) {
+                                        return $hours . ' j';
+                                    } else {
+                                        return $mins . ' m';
+                                    }
+                                };
                             @endphp
                             @if($totalTiktok > 0)
-                                @if($totalDiff >= 0)
-                                    {{-- TikTok >= Absen = Up arrow (blue) --}}
-                                    <span class="badge badge-sm tooltip-badge" data-tooltip="TikTok+"
+                                @if(abs($totalDiff) < 10)
+                                    {{-- Difference less than 10 minutes = Green checkmark --}}
+                                    <span class="badge badge-success badge-sm tooltip-badge"
+                                        data-tooltip="Sesuai ({{ $formatDuration(abs($totalDiff)) }})">✓</span>
+                                @elseif($totalDiff >= 10)
+                                    {{-- TikTok > Absen = Up arrow (blue) --}}
+                                    <span class="badge badge-sm tooltip-badge" data-tooltip="TikTok +{{ $formatDuration($totalDiff) }}"
                                         style="background: #3b82f6; color: white;">↑</span>
                                 @else
                                     {{-- Absen > TikTok = Down arrow (red) --}}
                                     <span class="badge badge-danger badge-sm tooltip-badge"
-                                        data-tooltip="Absen +{{ round(abs($totalDiff) / 60, 1) }} jam">↓</span>
+                                        data-tooltip="Absen +{{ $formatDuration(abs($totalDiff)) }}">↓</span>
                                 @endif
                             @else
                                 <span class="badge badge-secondary badge-sm tooltip-badge" data-tooltip="Belum ada data TikTok"

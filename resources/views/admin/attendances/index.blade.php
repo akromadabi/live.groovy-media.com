@@ -6,11 +6,11 @@
     <!-- Filter Bar -->
     <div class="card mb-6">
         <div class="card-body">
-            <form action="{{ route('admin.attendances.index') }}" method="GET" class="filter-bar">
+            <form action="{{ route('admin.attendances.index') }}" method="GET" class="filter-bar-grid"
+                style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
-                    <label class="form-label">User</label>
                     <select name="user_id" class="form-control form-select">
-                        <option value="">Semua User</option>
+                        <option value="">-- Pilih User --</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
                                 {{ $user->name }}
@@ -19,16 +19,16 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Tahun</label>
                     <select name="year" class="form-control form-select">
+                        <option value="">-- Pilih Tahun --</option>
                         @for($y = now()->year; $y >= 2020; $y--)
                             <option value="{{ $y }}" {{ request('year', now()->year) == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endfor
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Bulan</label>
                     <select name="month" class="form-control form-select">
+                        <option value="">-- Pilih Bulan --</option>
                         @for($m = 1; $m <= 12; $m++)
                             <option value="{{ $m }}" {{ request('month', now()->month) == $m ? 'selected' : '' }}>
                                 {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('F') }}
@@ -37,17 +37,15 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Periode</label>
                     <select name="term" class="form-control form-select">
-                        <option value="" {{ request('term') == '' ? 'selected' : '' }}>Satu Bulan</option>
+                        <option value="" {{ request('term') == '' ? 'selected' : '' }}>-- Satu Bulan --</option>
                         <option value="1" {{ request('term') == '1' ? 'selected' : '' }}>Termin 1 (1-15)</option>
                         <option value="2" {{ request('term') == '2' ? 'selected' : '' }}>Termin 2 (16-Akhir)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Status</label>
                     <select name="status" class="form-control form-select">
-                        <option value="">Semua</option>
+                        <option value="">-- Semua Status --</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="validated" {{ request('status') == 'validated' ? 'selected' : '' }}>Tervalidasi
                         </option>
@@ -55,8 +53,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary btn-block">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -120,32 +117,70 @@
         </div>
     </div>
 
-    <!-- Bonus Card (only shown when specific user is selected) -->
+    <!-- Salary Summary (only shown when specific user is selected) -->
     @if($bonusInfo)
-        <div class="bonus-card mb-4 {{ $bonusInfo['target_met'] ? 'bonus-met' : 'bonus-pending' }}">
-            <div class="bonus-header">
-                <span class="bonus-status">
-                    {{ $bonusInfo['user_name'] }}
-                    @if($bonusInfo['target_met'])
-                        • ✓ Target Tercapai
-                    @else
-                        • ⏳ Belum Tercapai
-                    @endif
-                </span>
-                <span class="bonus-progress">{{ $bonusInfo['monthly_hours'] }}/{{ $bonusInfo['target_hours'] }} jam</span>
+        <div class="salary-summary-container mb-6">
+            <!-- T1/T2 Salary Grid -->
+            <div class="term-salary-grid mb-4">
+                <div class="term-card">
+                    <div class="term-header">
+                        <span class="term-badge t1">T1</span>
+                        <span class="term-period">1 - 15</span>
+                    </div>
+                    <div class="term-body">
+                        <div class="term-hours">{{ $bonusInfo['termData']['t1']['hours'] }} <small>jam</small></div>
+                        <div class="term-salary">Rp {{ number_format($bonusInfo['termData']['t1']['salary'], 0, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+                <div class="term-card">
+                    <div class="term-header">
+                        <span class="term-badge t2">T2</span>
+                        <span class="term-period">16 - Akhir</span>
+                    </div>
+                    <div class="term-body">
+                        <div class="term-hours">{{ $bonusInfo['termData']['t2']['hours'] }} <small>jam</small></div>
+                        <div class="term-salary">Rp {{ number_format($bonusInfo['termData']['t2']['salary'], 0, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="bonus-body">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span class="bonus-label">Gaji (tanpa bonus)</span>
-                    <span style="font-weight: 600;">Rp {{ number_format($bonusInfo['total_salary'] ?? 0, 0, ',', '.') }}</span>
+
+            <!-- Bonus & Total Card -->
+            <div class="bonus-card {{ $bonusInfo['target_met'] ? 'bonus-met' : 'bonus-pending' }}">
+                <div class="bonus-header">
+                    <span class="bonus-status">
+                        {{ $bonusInfo['user_name'] }}
+                        @if($bonusInfo['target_met'])
+                            • ✓ Target Tercapai
+                        @else
+                            • ⏳ Belum Tercapai
+                        @endif
+                    </span>
+                    <span class="bonus-progress">{{ $bonusInfo['monthly_hours'] }}/{{ $bonusInfo['target_hours'] }} jam</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span class="bonus-label">Bonus Penjualan ({{ $bonusInfo['monthly_sales'] }} pcs)</span>
-                    <span class="bonus-amount">Rp {{ number_format($bonusInfo['sales_bonus'] ?? 0, 0, ',', '.') }}</span>
+                <div class="bonus-body">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center;">
+                        <span class="bonus-label">Gaji Pokok (T1 + T2)</span>
+                        <span style="font-weight: 600;">Rp
+                            {{ number_format($bonusInfo['total_salary'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="bonus-label">Bonus Penjualan ({{ $bonusInfo['monthly_sales'] }} pcs)</span>
+                        <span class="bonus-amount">Rp {{ number_format($bonusInfo['sales_bonus'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    @if(!$bonusInfo['target_met'] && $bonusInfo['sales_bonus'] > 0)
+                        <div class="bonus-note">*bonus berlaku jika target tercapai</div>
+                    @endif
+                    <div class="slip-divider" style="background: rgba(var(--primary-rgb), 0.1); margin: 12px 0;"></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600; color: white;">Total Gaji</span>
+                        <span style="font-weight: 700; color: white; font-size: 1.1rem;">
+                            Rp
+                            {{ number_format(($bonusInfo['total_salary'] ?? 0) + ($bonusInfo['target_met'] ? $bonusInfo['sales_bonus'] : 0), 0, ',', '.') }}
+                        </span>
+                    </div>
                 </div>
-                @if(!$bonusInfo['target_met'] && $bonusInfo['sales_bonus'] > 0)
-                    <div class="bonus-note">*bonus berlaku jika target tercapai</div>
-                @endif
             </div>
         </div>
     @endif
@@ -207,11 +242,11 @@
                         <th>User</th>
                         <th>Tanggal</th>
                         <th>Durasi</th>
-                        <th>Konten Edit</th>
-                        <th>Konten Live</th>
-                        <th>Penjualan</th>
-                        <th>Gaji</th>
-                        <th>Status</th>
+                        <th class="hide-on-mobile">Konten Edit</th>
+                        <th class="hide-on-mobile">Konten Live</th>
+                        <th class="hide-on-mobile">Penjualan</th>
+                        <th class="hide-on-mobile">Gaji</th>
+                        <th class="hide-on-mobile">Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -219,13 +254,14 @@
                     @forelse($attendances as $attendance)
                         @php
                             $scheme = $attendance->user->salaryScheme;
-                            // Gaji harian = durasi + konten (tanpa penjualan, penjualan masuk bonus)
                             $salary = 0;
                             if ($scheme) {
                                 $hours = $attendance->live_duration_minutes / 60;
-                                $salary = ($hours * $scheme->hourly_rate)
-                                    + ($attendance->content_edit_count * $scheme->content_edit_rate)
-                                    + ($attendance->content_live_count * $scheme->content_live_rate);
+                                $salary =
+                                    $hours * $scheme->hourly_rate +
+                                    $attendance->content_edit_count * $scheme->content_edit_rate +
+                                    $attendance->content_live_count * $scheme->content_live_rate +
+                                    \App\Models\BonusTier::getBonusForSales($attendance->sales_count);
                             }
                         @endphp
                         <tr>
@@ -244,13 +280,13 @@
                             </td>
                             <td>{{ $attendance->attendance_date->format('d M Y') }}</td>
                             <td>{{ $attendance->formatted_duration }}</td>
-                            <td>{{ $attendance->content_edit_count }}</td>
-                            <td>{{ $attendance->content_live_count }}</td>
-                            <td>{{ $attendance->sales_count }}</td>
-                            <td class="font-medium" style="color: var(--success);">
+                            <td class="hide-on-mobile">{{ $attendance->content_edit_count }}</td>
+                            <td class="hide-on-mobile">{{ $attendance->content_live_count }}</td>
+                            <td class="hide-on-mobile">{{ $attendance->sales_count }}</td>
+                            <td class="hide-on-mobile font-medium" style="color: var(--success);">
                                 Rp {{ number_format($salary, 0, ',', '.') }}
                             </td>
-                            <td>
+                            <td class="hide-on-mobile">
                                 @if($attendance->status === 'validated')
                                     <span class="badge badge-success">Tervalidasi</span>
                                 @elseif($attendance->status === 'pending')
@@ -311,19 +347,18 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center text-muted" style="padding: 3rem;">
-                                Tidak ada data absensi
-                            </td>
+                            <td colspan="10" class="text-center text-muted">Tidak ada data absensi.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        @if($attendances->hasPages())
-            <div class="card-footer">
-                {{ $attendances->withQueryString()->links() }}
-            </div>
-        @endif
+    </div>
+    @if($attendances->hasPages())
+        <div class="card-footer">
+            {{ $attendances->withQueryString()->links() }}
+        </div>
+    @endif
     </div>
 @endsection
 
@@ -386,6 +421,49 @@
                     form.appendChild(input);
                 });
                 form.submit();
+            }
+        }
+
+        function toggleRowDetails(id) {
+            const detailRow = document.getElementById('detail-' + id);
+            if (detailRow.style.display === 'none') {
+                detailRow.style.display = 'table-row';
+            } else {
+                detailRow.style.display = 'none';
+            }
+        }
+
+        function toggleActionMenu(id) {
+            const menu = document.getElementById('action-menu-' + id);
+            const allMenus = document.querySelectorAll('.action-menu');
+
+            // Close all other menus
+            allMenus.forEach(m => {
+                if (m.id !== 'action-menu-' + id) {
+                    m.style.display = 'none';
+                }
+            });
+
+            // Toggle current menu
+            if (menu.style.display === 'none') {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('.dropdown-action')) {
+                document.querySelectorAll('.action-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
+
+        function confirmDelete(formId) {
+            if (confirm('Hapus data absensi ini?')) {
+                document.getElementById(formId).submit();
             }
         }
     </script>

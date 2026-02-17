@@ -30,14 +30,14 @@ class AttendanceController extends Controller
         $term = $request->input('term'); // null = full month, 1 = 1-15, 2 = 16-end
 
         // Calculate date range based on year, month, term (use toDateString for DATE column)
-        $startDate = Carbon::createFromDate($year, $month, 1)->toDateString();
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfDay()->toDateString();
         if ($term === '1') {
-            $endDate = Carbon::createFromDate($year, $month, 15)->toDateString();
+            $endDate = Carbon::createFromDate($year, $month, 15)->endOfDay()->toDateString();
         } elseif ($term === '2') {
-            $startDate = Carbon::createFromDate($year, $month, 16)->toDateString();
-            $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+            $startDate = Carbon::createFromDate($year, $month, 16)->startOfDay()->toDateString();
+            $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay()->toDateString();
         } else {
-            $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+            $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay()->toDateString();
         }
         $query->whereBetween('attendance_date', [$startDate, $endDate]);
 
@@ -74,12 +74,12 @@ class AttendanceController extends Controller
         $bonusInfo = null;
         if ($selectedUser) {
             $scheme = $selectedUser->salaryScheme;
-            $monthStart = Carbon::createFromDate($year, $month, 1)->toDateString();
-            $monthEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
-            $daysInMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->day;
+            $monthStart = Carbon::createFromDate($year, $month, 1)->startOfMonth()->startOfDay();
+            $monthEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
+            $daysInMonth = $monthStart->daysInMonth;
 
             $monthlyMinutes = $selectedUser->attendances()
-                ->whereBetween('attendance_date', [$monthStart, $monthEnd])
+                ->whereBetween('attendance_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
                 ->sum('live_duration_minutes');
             $monthlyHours = round($monthlyMinutes / 60, 1);
             $monthlySales = $selectedUser->attendances()
@@ -92,7 +92,28 @@ class AttendanceController extends Controller
             $targetHours = ($daysInMonth - $daysOff) * $dailyTargetHours;
 
             $targetMet = $monthlyHours >= $targetHours;
-            $salesBonus = $monthlySales > 0 ? \App\Models\BonusTier::getBonusForSales($monthlySales) : 0;
+
+            // Daily sales bonus calculation (grouped by date) - include pending and validated
+            $salesBonus = 0;
+            $validatedAttendances = $selectedUser->attendances()
+                ->whereIn('status', ['pending', 'validated'])
+                ->whereBetween('attendance_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
+                ->get();
+
+            // Group sales by date
+            $dailySales = [];
+            foreach ($validatedAttendances as $attendance) {
+                $date = $attendance->attendance_date->toDateString();
+                if (!isset($dailySales[$date])) {
+                    $dailySales[$date] = 0;
+                }
+                $dailySales[$date] += $attendance->sales_count;
+            }
+
+            // Calculate bonus based on daily totals
+            foreach ($dailySales as $salesCount) {
+                $salesBonus += \App\Models\BonusTier::getBonusForSales($salesCount);
+            }
 
             // Calculate total salary
             $totalSalary = 0;
@@ -110,6 +131,40 @@ class AttendanceController extends Controller
                 'monthly_sales' => $monthlySales,
                 'sales_bonus' => $salesBonus,
                 'total_salary' => $totalSalary,
+            ];
+
+            // Calculate Termin Salary (T1 & T2)
+            $t1Start = Carbon::createFromDate($year, $month, 1)->toDateString();
+            $t1End = Carbon::createFromDate($year, $month, 15)->toDateString();
+            $t2Start = Carbon::createFromDate($year, $month, 16)->toDateString();
+            $t2End = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+
+            $t1Attendances = $selectedUser->attendances()
+                ->whereBetween('attendance_date', [$t1Start, $t1End])
+                ->get();
+
+            $t2Attendances = $selectedUser->attendances()
+                ->whereBetween('attendance_date', [$t2Start, $t2End])
+                ->get();
+
+            $calculateTermin = function ($attendances) use ($scheme) {
+                $minutes = $attendances->sum('live_duration_minutes');
+                $hours = $minutes / 60;
+                $salary = 0;
+                if ($scheme) {
+                    $salary = ($hours * $scheme->hourly_rate)
+                        + ($attendances->sum('content_edit_count') * $scheme->content_edit_rate)
+                        + ($attendances->sum('content_live_count') * $scheme->content_live_rate);
+                }
+                return [
+                    'hours' => round($hours, 1),
+                    'salary' => $salary,
+                ];
+            };
+
+            $bonusInfo['termData'] = [
+                't1' => $calculateTermin($t1Attendances),
+                't2' => $calculateTermin($t2Attendances),
             ];
         }
 

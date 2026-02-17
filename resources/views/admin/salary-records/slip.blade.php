@@ -62,7 +62,7 @@
 
         /* Match show.blade.php styling exactly */
         #salary-slip {
-            max-width: 400px;
+            max-width: 500px;
             margin: 0 auto;
         }
 
@@ -245,56 +245,114 @@
                 </div>
                 <div class="slip-title">
                     <h2>Slip Gaji</h2>
-                    <p>TikTok Live Manager</p>
+                    <p>Host Live Groovy</p>
                 </div>
             </div>
 
             <div class="slip-body">
-                <div class="slip-info">
-                    <div class="slip-row">
-                        <span class="slip-label">Nama</span>
-                        <span class="slip-value">{{ $salaryRecord->user->name }}</span>
+                <!-- Header Info (compact 2-col) -->
+                <div style="display: flex; gap: 10px; margin-bottom: 4px;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 16px; font-weight: 700;">{{ $salaryRecord->user->name }}</div>
+                        <div style="font-size: 12px; opacity: 0.7;">{{ $salaryRecord->user->task ?? 'Host' }}</div>
                     </div>
-                    <div class="slip-row">
-                        <span class="slip-label">Jabatan</span>
-                        <span class="slip-value">{{ $salaryRecord->user->task ?? 'Host' }}</span>
-                    </div>
-                    <div class="slip-row">
-                        <span class="slip-label">Periode</span>
-                        <span class="slip-value">{{ $salaryRecord->period_label }}</span>
-                    </div>
-                    <div class="slip-row">
-                        <span class="slip-label">Termin</span>
-                        <span class="slip-value">{{ $salaryRecord->term_label }}</span>
+                    <div style="text-align: right;">
+                        <div style="font-size: 14px; font-weight: 600;">{{ $salaryRecord->period_label }}</div>
+                        <div style="font-size: 12px; opacity: 0.7;">{{ $salaryRecord->term_label }}</div>
                     </div>
                 </div>
 
                 <div class="slip-divider"></div>
 
-                <!-- Attendance Details -->
-                <div class="slip-info">
-                    <div class="slip-row">
-                        <span class="slip-label">Total Jam</span>
-                        <span class="slip-value">{{ number_format($salaryRecord->total_hours, 1) }} jam</span>
-                    </div>
-                    <div class="slip-row">
-                        <span class="slip-label">Jumlah Live</span>
-                        <span class="slip-value">{{ $salaryRecord->total_live_count }}x</span>
-                    </div>
-                    <div class="slip-row">
-                        <span class="slip-label">Penjualan</span>
-                        <span class="slip-value">{{ $salaryRecord->total_sales }}</span>
-                    </div>
-                    @if($salaryRecord->total_content_edit || $salaryRecord->total_content_live)
-                        <div class="slip-row">
-                            <span class="slip-label">Konten Edit</span>
-                            <span class="slip-value">{{ $salaryRecord->total_content_edit }}</span>
+                <!-- Stats Grid (compact) -->
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <div
+                        style="flex: 1; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; text-align: center;">
+                        <div style="font-size: 18px; font-weight: 700;">
+                            {{ number_format($salaryRecord->total_hours, 1) }}
                         </div>
+                        <div style="font-size: 10px; opacity: 0.7;">Jam Live</div>
+                    </div>
+                    <div
+                        style="flex: 1; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; text-align: center;">
+                        <div style="font-size: 18px; font-weight: 700;">{{ $salaryRecord->total_live_count }}x</div>
+                        <div style="font-size: 10px; opacity: 0.7;">Sesi Live</div>
+                    </div>
+                    <div
+                        style="flex: 1; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; text-align: center;">
+                        <div style="font-size: 18px; font-weight: 700;">{{ $salaryRecord->total_sales }}</div>
+                        <div style="font-size: 10px; opacity: 0.7;">Penjualan</div>
+                    </div>
+                </div>
+
+                <div class="slip-divider"></div>
+
+                <!-- Salary Breakdown (Compact) -->
+                <div class="slip-info">
+                    @if($salaryScheme)
+                        <div class="slip-row" style="font-size: 13px;">
+                            <span class="slip-label">Gaji Live</span>
+                            <span class="slip-value">{{ number_format($salaryRecord->total_hours, 1) }} ×
+                                Rp{{ number_format($salaryScheme->hourly_rate, 0, ',', '.') }} =
+                                <strong>Rp{{ number_format($salaryRecord->total_hours * $salaryScheme->hourly_rate, 0, ',', '.') }}</strong></span>
+                        </div>
+
+                        @if($salaryRecord->total_content_edit > 0)
+                            <div class="slip-row" style="font-size: 13px;">
+                                <span class="slip-label">K. Edit</span>
+                                <span class="slip-value">{{ $salaryRecord->total_content_edit }} ×
+                                    Rp{{ number_format($salaryScheme->content_edit_rate, 0, ',', '.') }} =
+                                    <strong>Rp{{ number_format($salaryRecord->total_content_edit * $salaryScheme->content_edit_rate, 0, ',', '.') }}</strong></span>
+                            </div>
+                        @endif
+
+                        @if($salaryRecord->total_content_live > 0)
+                            <div class="slip-row" style="font-size: 13px;">
+                                <span class="slip-label">K. Live</span>
+                                <span class="slip-value">{{ $salaryRecord->total_content_live }} ×
+                                    Rp{{ number_format($salaryScheme->content_live_rate, 0, ',', '.') }} =
+                                    <strong>Rp{{ number_format($salaryRecord->total_content_live * $salaryScheme->content_live_rate, 0, ',', '.') }}</strong></span>
+                            </div>
+                        @endif
+
+                        <div style="height: 1px; background: rgba(255,255,255,0.15); margin: 6px 0;"></div>
+                        <div class="slip-row" style="font-weight: 600;">
+                            <span class="slip-label">Subtotal</span>
+                            <span class="slip-value">Rp
+                                {{ number_format((float) $salaryRecord->base_salary, 0, ',', '.') }}</span>
+                        </div>
+                    @else
                         <div class="slip-row">
-                            <span class="slip-label">Konten Live</span>
-                            <span class="slip-value">{{ $salaryRecord->total_content_live }}</span>
+                            <span class="slip-label">Gaji Pokok</span>
+                            <span class="slip-value">Rp
+                                {{ number_format((float) $salaryRecord->base_salary, 0, ',', '.') }}</span>
                         </div>
                     @endif
+
+                    @if($salaryRecord->target_met)
+                        <div class="slip-row">
+                            <span class="slip-label">Bonus</span>
+                            <span class="slip-value">Rp
+                                {{ number_format((float) $salaryRecord->bonus_amount, 0, ',', '.') }}</span>
+                        </div>
+                    @else
+                        <div class="slip-row" style="opacity: 0.5;">
+                            <span class="slip-label">Bonus</span>
+                            <span class="slip-value"><s>Rp {{ number_format($potentialBonus, 0, ',', '.') }}</s> <span
+                                    style="font-size: 10px;">(belum target)</span></span>
+                        </div>
+                    @endif
+
+                    <div class="slip-row" style="padding: 4px 0;">
+                        <span class="slip-label">Target</span>
+                        @if($salaryRecord->target_met)
+                            <span class="status-badge paid" style="font-size: 11px; padding: 3px 10px;">✓ Tercapai</span>
+                        @else
+                            <span
+                                style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(239, 68, 68, 0.3); color: #fca5a5;">✗
+                                Belum</span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="slip-divider"></div>

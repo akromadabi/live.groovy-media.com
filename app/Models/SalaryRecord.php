@@ -13,6 +13,9 @@ class SalaryRecord extends Model
         'month',
         'term',
         'amount',
+        'base_salary',
+        'bonus_amount',
+        'target_met',
         'total_hours',
         'total_live_count',
         'total_sales',
@@ -25,6 +28,9 @@ class SalaryRecord extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'base_salary' => 'decimal:2',
+        'bonus_amount' => 'decimal:2',
+        'target_met' => 'boolean',
         'total_hours' => 'decimal:2',
         'paid_at' => 'date',
     ];

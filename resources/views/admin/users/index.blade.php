@@ -18,9 +18,9 @@
                 <thead>
                     <tr>
                         <th>Pengguna</th>
-                        <th>Email</th>
+                        <th class="hide-on-mobile">Email</th>
                         <th>Tugas</th>
-                        <th>Role</th>
+                        <th class="hide-on-mobile">Role</th>
                         <th>Status</th>
                         <th>Aksi</th>
                     </tr>
@@ -37,9 +37,9 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ $user->email }}</td>
+                            <td class="hide-on-mobile">{{ $user->email }}</td>
                             <td>{{ $user->task ?? '-' }}</td>
-                            <td>
+                            <td class="hide-on-mobile">
                                 <span class="badge {{ $user->role === 'admin' ? 'badge-primary' : 'badge-secondary' }}">
                                     {{ ucfirst($user->role) }}
                                 </span>

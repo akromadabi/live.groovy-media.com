@@ -124,11 +124,11 @@ class Salary extends Model
     public static function getTermDates(int $year, int $month, int $term): array
     {
         if ($term === 1) {
-            $start = Carbon::createFromDate($year, $month, 1);
-            $end = Carbon::createFromDate($year, $month, 15);
+            $start = Carbon::createFromDate($year, $month, 1)->startOfDay();
+            $end = Carbon::createFromDate($year, $month, 15)->endOfDay();
         } else {
-            $start = Carbon::createFromDate($year, $month, 16);
-            $end = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+            $start = Carbon::createFromDate($year, $month, 16)->startOfDay();
+            $end = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
         }
 
         return [

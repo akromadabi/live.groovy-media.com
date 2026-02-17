@@ -1,0 +1,54 @@
+[90m= [39m[
+    {#6123
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mattendances[39m",
+    },
+    {#6124
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mbonus_tiers[39m",
+    },
+    {#6125
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mcache[39m",
+    },
+    {#6126
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mcache_locks[39m",
+    },
+    {#6139
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mfailed_jobs[39m",
+    },
+    {#6117
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mjob_batches[39m",
+    },
+    {#6140
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mjobs[39m",
+    },
+    {#6141
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mmigrations[39m",
+    },
+    {#6142
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mpassword_reset_tokens[39m",
+    },
+    {#6143
+      +"[1mTables_in_diantar2_live_manager[22m": "[32msalaries[39m",
+    },
+    {#6144
+      +"[1mTables_in_diantar2_live_manager[22m": "[32msalary_records[39m",
+    },
+    {#6145
+      +"[1mTables_in_diantar2_live_manager[22m": "[32msalary_schemes[39m",
+    },
+    {#6146
+      +"[1mTables_in_diantar2_live_manager[22m": "[32msessions[39m",
+    },
+    {#6147
+      +"[1mTables_in_diantar2_live_manager[22m": "[32msettings[39m",
+    },
+    {#6148
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mtiktok_report_details[39m",
+    },
+    {#6149
+      +"[1mTables_in_diantar2_live_manager[22m": "[32mtiktok_reports[39m",
+    },
+    {#6150
+      +"[1mTables_in_diantar2_live_manager[22m": "[32musers[39m",
+    },
+  ]
+

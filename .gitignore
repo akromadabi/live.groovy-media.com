@@ -24,8 +24,15 @@ Thumbs.db
 
 # Temp files
 *.sql
+*.zip
+*.xlsx
 public/error_log
 read_excel_*.php
 verify_*.php
 excel_analysis*.txt
 QUICK_REFERENCE.md
+
+# Hosting artifacts
+cgi-bin/
+.well-known/
+/.htaccess

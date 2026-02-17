@@ -2116,8 +2116,8 @@ a:hover {
     flex-direction: column;
     align-items: center;
     margin-top: -30px;
-    z-index: 100;
-    /* Stay above dropup menu */
+    z-index: 102;
+    /* Higher than bottom-nav (100) and dropup (99) */
 }
 
 .fab-button {
@@ -2130,9 +2130,10 @@ a:hover {
     justify-content: center;
     box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     text-decoration: none;
     border: 3px solid var(--surface);
+    z-index: 103;
 }
 
 .fab-button svg {
@@ -2141,10 +2142,14 @@ a:hover {
     color: white;
 }
 
-.fab-button:hover,
-.fab-button.active {
+.fab-button:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.fab-button.active {
+    transform: translateY(-8px) scale(1.1);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
 }
 
 /* Home Indicator Bar */

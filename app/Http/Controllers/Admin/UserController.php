@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\SalaryScheme;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -121,7 +122,16 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $scheme = $user->salaryScheme ?? new SalaryScheme();
+
+        $globalDefaults = [
+            'daily_live_hours' => Setting::getValue('daily_live_hours', 3),
+            'monthly_leave_days' => Setting::getValue('monthly_leave_days', 4),
+            'bonus_pcs_threshold' => Setting::getValue('bonus_pcs_threshold', 20),
+            'bonus_amount' => Setting::getValue('bonus_amount', 10000),
+        ];
+
+        return view('admin.users.edit', compact('user', 'scheme', 'globalDefaults'));
     }
 
     /**
@@ -136,6 +146,10 @@ class UserController extends Controller
             'task' => 'required|string|max:100',
             'phone' => 'nullable|string|max:20',
             'is_active' => 'boolean',
+            'daily_live_hours' => 'nullable|numeric|min:0.5|max:24',
+            'monthly_leave_days' => 'nullable|integer|min:0|max:15',
+            'bonus_pcs_threshold' => 'nullable|integer|min:1',
+            'bonus_amount' => 'nullable|numeric|min:0',
         ]);
 
         $updateData = [
@@ -151,6 +165,19 @@ class UserController extends Controller
         }
 
         $user->update($updateData);
+
+        // Update bonus scheme fields
+        $bonusData = [];
+        foreach (['daily_live_hours', 'monthly_leave_days', 'bonus_pcs_threshold', 'bonus_amount'] as $field) {
+            $bonusData[$field] = (isset($validated[$field]) && $validated[$field] !== '' && $validated[$field] !== null)
+                ? $validated[$field]
+                : null;
+        }
+
+        SalaryScheme::updateOrCreate(
+            ['user_id' => $user->id],
+            $bonusData
+        );
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User berhasil diperbarui.');

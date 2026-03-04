@@ -62,6 +62,10 @@ class SalaryRecord extends Model
      */
     public function getTermLabelAttribute()
     {
-        return $this->term == '1' ? 'T1 (1-15)' : 'T2 (16-akhir)';
+        if ($this->term == '1') {
+            return 'T1 (1-15)';
+        }
+        $endDay = Carbon::createFromDate($this->year, $this->month, 1)->endOfMonth()->day;
+        return "T2 (16-{$endDay})";
     }
 }

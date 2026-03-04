@@ -281,7 +281,8 @@
                                                 ->sum('live_duration_minutes');
 
                                             $monthlyHours = $monthlyMinutes / 60;
-                                            $bonusAchieved = $monthlyHours >= $scheme->monthly_target_hours;
+                                            $monthlyTarget = $scheme->calculateMonthlyTarget($record->year, $record->month);
+                                            $bonusAchieved = $monthlyHours >= $monthlyTarget;
                                         }
                                     @endphp
                                     <div style="display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem;">

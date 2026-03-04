@@ -197,7 +197,8 @@ class DashboardController extends Controller
             // T1: no bonus (month not finished yet)
             // T2: check full month hours (T1+T2) against monthly target
             $fullMonthHours = $t1Hours + $t2Hours;
-            $targetMet = $fullMonthHours >= (float) $scheme->monthly_target_hours;
+            $monthlyTarget = $scheme->calculateMonthlyTarget($year, $month);
+            $targetMet = $fullMonthHours >= $monthlyTarget;
 
             if ($targetMet) {
                 // Bonus from entire month's sales goes to T2
@@ -210,8 +211,10 @@ class DashboardController extends Controller
                     }
                     $dailySales[$date] += $a->sales_count;
                 }
+                $userThreshold = $scheme->bonus_pcs_threshold;
+                $userBonusAmount = $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : null;
                 foreach ($dailySales as $salesCount) {
-                    $t2Salary += \App\Models\BonusTier::getBonusForSales($salesCount);
+                    $t2Salary += \App\Models\BonusTier::getBonusForSales($salesCount, $userThreshold, $userBonusAmount);
                 }
             }
         }
@@ -263,11 +266,14 @@ class DashboardController extends Controller
         }
 
         // Only add sales bonus if target hours are met
-        // Use full monthly target since this calculates across all pending time
-        $targetMet = $totalHours >= (float) $scheme->monthly_target_hours;
+        // Use dynamic monthly target calculation
+        $monthlyTarget = $scheme->calculateMonthlyTarget();
+        $targetMet = $totalHours >= $monthlyTarget;
         if ($targetMet) {
+            $userThreshold = $scheme->bonus_pcs_threshold;
+            $userBonusAmount = $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : null;
             foreach ($dailySales as $salesCount) {
-                $total += \App\Models\BonusTier::getBonusForSales($salesCount);
+                $total += \App\Models\BonusTier::getBonusForSales($salesCount, $userThreshold, $userBonusAmount);
             }
         }
 

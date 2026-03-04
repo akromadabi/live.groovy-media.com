@@ -173,7 +173,8 @@ class SalaryController extends Controller
             ->sum('live_duration_minutes');
 
         $monthlyHours = $monthlyMinutes / 60;
-        $targetMet = $monthlyHours >= $scheme->monthly_target_hours;
+        $monthlyTarget = $scheme->calculateMonthlyTarget($startDate->year, $startDate->month);
+        $targetMet = $monthlyHours >= $monthlyTarget;
 
         // Calculate daily sales bonus (only if target met, grouped by date)
         $salesBonus = 0;
@@ -187,8 +188,10 @@ class SalaryController extends Controller
                 $dailySales[$date] += $attendance->sales_count;
             }
 
+            $userThreshold = $scheme->bonus_pcs_threshold;
+            $userBonusAmt = $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : null;
             foreach ($dailySales as $salesCount) {
-                $salesBonus += BonusTier::getBonusForSales($salesCount);
+                $salesBonus += BonusTier::getBonusForSales($salesCount, $userThreshold, $userBonusAmt);
             }
         }
 

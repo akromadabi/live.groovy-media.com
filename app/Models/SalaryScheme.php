@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Setting;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalaryScheme extends Model
@@ -18,6 +19,10 @@ class SalaryScheme extends Model
         'monthly_target_hours',
         'sales_bonus_percentage',
         'sales_bonus_nominal',
+        'daily_live_hours',
+        'monthly_leave_days',
+        'bonus_pcs_threshold',
+        'bonus_amount',
     ];
 
     protected $attributes = [
@@ -38,6 +43,10 @@ class SalaryScheme extends Model
             'monthly_target_hours' => 'decimal:1',
             'sales_bonus_percentage' => 'decimal:2',
             'sales_bonus_nominal' => 'integer',
+            'daily_live_hours' => 'decimal:1',
+            'monthly_leave_days' => 'integer',
+            'bonus_pcs_threshold' => 'integer',
+            'bonus_amount' => 'decimal:2',
         ];
     }
 
@@ -86,5 +95,43 @@ class SalaryScheme extends Model
             'current_hours' => $totalHours,
             'target_met' => $targetMet,
         ];
+    }
+
+    /**
+     * Get effective bonus setting value (per-user or global fallback)
+     */
+    public function getEffectiveValue(string $field, $globalDefault = null)
+    {
+        // If user has a custom value set, use it
+        if ($this->{$field} !== null) {
+            return $this->{$field};
+        }
+
+        // Fallback to global setting
+        $defaults = [
+            'daily_live_hours' => 3,
+            'monthly_leave_days' => 4,
+            'bonus_pcs_threshold' => 20,
+            'bonus_amount' => 10000,
+        ];
+
+        return Setting::getValue($field, $globalDefault ?? ($defaults[$field] ?? null));
+    }
+
+    /**
+     * Calculate monthly target hours dynamically
+     * Formula: (days_in_month - leave_days) * daily_hours
+     */
+    public function calculateMonthlyTarget($year = null, $month = null): float
+    {
+        $year = $year ?? now()->year;
+        $month = $month ?? now()->month;
+
+        $dailyHours = (float) $this->getEffectiveValue('daily_live_hours');
+        $leaveDays = (int) $this->getEffectiveValue('monthly_leave_days');
+        $daysInMonth = \Carbon\Carbon::createFromDate($year, $month, 1)->daysInMonth;
+
+        $workDays = $daysInMonth - $leaveDays;
+        return $workDays * $dailyHours;
     }
 }

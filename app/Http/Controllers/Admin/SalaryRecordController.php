@@ -141,17 +141,22 @@ class SalaryRecordController extends Controller
                 $t1Key = "{$userId}-{$year}-{$month}-1";
                 $t1Hours = isset($attendanceData[$t1Key]) ? $attendanceData[$t1Key]['hours'] : 0;
                 $fullMonthHours = $t1Hours + $data['hours'];
-                $targetMet = $fullMonthHours >= (float) $scheme->monthly_target_hours;
+                $monthlyTarget = $scheme->calculateMonthlyTarget($year, $month);
+                $targetMet = $fullMonthHours >= $monthlyTarget;
+
+                // Get per-user bonus settings (null = use global)
+                $userThreshold = $scheme->bonus_pcs_threshold;
+                $userBonusAmount = $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : null;
 
                 if ($targetMet) {
                     // Add bonus from T2 daily sales
                     foreach ($data['daily_sales'] as $salesCount) {
-                        $attendanceData[$key]['salary'] += \App\Models\BonusTier::getBonusForSales($salesCount);
+                        $attendanceData[$key]['salary'] += \App\Models\BonusTier::getBonusForSales($salesCount, $userThreshold, $userBonusAmount);
                     }
                     // Also add bonus from T1 daily sales (bonus for whole month goes to T2)
                     if (isset($attendanceData[$t1Key]['daily_sales'])) {
                         foreach ($attendanceData[$t1Key]['daily_sales'] as $salesCount) {
-                            $attendanceData[$key]['salary'] += \App\Models\BonusTier::getBonusForSales($salesCount);
+                            $attendanceData[$key]['salary'] += \App\Models\BonusTier::getBonusForSales($salesCount, $userThreshold, $userBonusAmount);
                         }
                     }
                 }
@@ -220,11 +225,27 @@ class SalaryRecordController extends Controller
     {
         $salary_record->load('user');
         $salaryScheme = \App\Models\SalaryScheme::where('user_id', $salary_record->user_id)->first();
-        $potentialBonus = \App\Models\BonusTier::getBonusForSales((int) $salary_record->total_sales);
+
+        $userThreshold = $salaryScheme ? $salaryScheme->bonus_pcs_threshold : null;
+        $userBonusAmt = $salaryScheme && $salaryScheme->bonus_amount !== null ? (float) $salaryScheme->bonus_amount : null;
+        $potentialBonus = \App\Models\BonusTier::getBonusForSales((int) $salary_record->total_sales, $userThreshold, $userBonusAmt);
+
+        // Calculate full month hours and dynamic target
+        $monthStart = \Carbon\Carbon::createFromDate($salary_record->year, $salary_record->month, 1)->startOfDay();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+        $monthlyMinutes = \App\Models\Attendance::where('user_id', $salary_record->user_id)
+            ->whereIn('status', ['pending', 'validated'])
+            ->whereBetween('attendance_date', [$monthStart, $monthEnd])
+            ->sum('live_duration_minutes');
+        $monthlyHours = round($monthlyMinutes / 60, 1);
+        $monthlyTarget = $salaryScheme ? $salaryScheme->calculateMonthlyTarget($salary_record->year, $salary_record->month) : 0;
+
         return view('admin.salary-records.show', [
             'salaryRecord' => $salary_record,
             'salaryScheme' => $salaryScheme,
             'potentialBonus' => $potentialBonus,
+            'monthlyHours' => $monthlyHours,
+            'monthlyTarget' => $monthlyTarget,
         ]);
     }
 
@@ -305,8 +326,22 @@ class SalaryRecordController extends Controller
     {
         $salaryRecord = SalaryRecord::with('user')->findOrFail($id);
         $salaryScheme = \App\Models\SalaryScheme::where('user_id', $salaryRecord->user_id)->first();
-        $potentialBonus = \App\Models\BonusTier::getBonusForSales((int) $salaryRecord->total_sales);
-        return view('admin.salary-records.slip', compact('salaryRecord', 'salaryScheme', 'potentialBonus'));
+
+        $userThreshold = $salaryScheme ? $salaryScheme->bonus_pcs_threshold : null;
+        $userBonusAmt = $salaryScheme && $salaryScheme->bonus_amount !== null ? (float) $salaryScheme->bonus_amount : null;
+        $potentialBonus = \App\Models\BonusTier::getBonusForSales((int) $salaryRecord->total_sales, $userThreshold, $userBonusAmt);
+
+        // Calculate full month hours and dynamic target
+        $monthStart = \Carbon\Carbon::createFromDate($salaryRecord->year, $salaryRecord->month, 1)->startOfDay();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+        $monthlyMinutes = \App\Models\Attendance::where('user_id', $salaryRecord->user_id)
+            ->whereIn('status', ['pending', 'validated'])
+            ->whereBetween('attendance_date', [$monthStart, $monthEnd])
+            ->sum('live_duration_minutes');
+        $monthlyHours = round($monthlyMinutes / 60, 1);
+        $monthlyTarget = $salaryScheme ? $salaryScheme->calculateMonthlyTarget($salaryRecord->year, $salaryRecord->month) : 0;
+
+        return view('admin.salary-records.slip', compact('salaryRecord', 'salaryScheme', 'potentialBonus', 'monthlyHours', 'monthlyTarget'));
     }
 
     /**
@@ -446,7 +481,12 @@ class SalaryRecordController extends Controller
 
                             // Full month hours = T1 + T2
                             $fullMonthHours = $t1Hours + $totalHours;
-                            $targetMet = $fullMonthHours >= (float) $scheme->monthly_target_hours;
+                            $monthlyTarget = $scheme->calculateMonthlyTarget($year, $month);
+                            $targetMet = $fullMonthHours >= $monthlyTarget;
+
+                            // Get per-user bonus settings (null = use global)
+                            $userThreshold = $scheme->bonus_pcs_threshold;
+                            $userBonusAmt = $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : null;
 
                             // Only apply sales bonus if full month target is met
                             if ($targetMet) {
@@ -466,7 +506,7 @@ class SalaryRecordController extends Controller
                                 }
 
                                 foreach ($dailySales as $salesCount) {
-                                    $bonusAmount += \App\Models\BonusTier::getBonusForSales($salesCount);
+                                    $bonusAmount += \App\Models\BonusTier::getBonusForSales($salesCount, $userThreshold, $userBonusAmt);
                                 }
                             }
                         }

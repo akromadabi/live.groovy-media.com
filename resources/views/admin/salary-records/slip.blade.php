@@ -344,7 +344,8 @@
                     @endif
 
                     <div class="slip-row" style="padding: 4px 0;">
-                        <span class="slip-label">Target</span>
+                        <span class="slip-label">Target <span
+                                style="font-weight: 600;">{{ $monthlyHours }}/{{ $monthlyTarget }} jam</span></span>
                         @if($salaryRecord->target_met)
                             <span class="status-badge paid" style="font-size: 11px; padding: 3px 10px;">✓ Tercapai</span>
                         @else

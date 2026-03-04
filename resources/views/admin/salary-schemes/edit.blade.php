@@ -70,6 +70,61 @@
                     @enderror
                 </div>
 
+                <hr style="border-color: var(--border); margin: 1.5rem 0;">
+
+                <h4 class="mb-4">📊 Skema Bonus (Per User)</h4>
+                <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+                    <small>Kosongkan field untuk menggunakan aturan global. Jika diisi, nilai ini hanya berlaku untuk user
+                        ini.</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="daily_live_hours" class="form-label">Jatah Live Per Hari (Jam)</label>
+                        <input type="number" name="daily_live_hours" id="daily_live_hours" class="form-control"
+                            value="{{ old('daily_live_hours', $scheme->daily_live_hours) }}" min="0.5" max="24" step="0.5"
+                            placeholder="Global: {{ $globalDefaults['daily_live_hours'] }}">
+                        <div class="form-hint">Global: {{ $globalDefaults['daily_live_hours'] }} jam</div>
+                        @error('daily_live_hours')
+                            <div class="form-error">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="monthly_leave_days" class="form-label">Jatah Libur Per Bulan</label>
+                        <input type="number" name="monthly_leave_days" id="monthly_leave_days" class="form-control"
+                            value="{{ old('monthly_leave_days', $scheme->monthly_leave_days) }}" min="0" max="15"
+                            placeholder="Global: {{ $globalDefaults['monthly_leave_days'] }}">
+                        <div class="form-hint">Global: {{ $globalDefaults['monthly_leave_days'] }} hari</div>
+                        @error('monthly_leave_days')
+                            <div class="form-error">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bonus_pcs_threshold" class="form-label">Target Penjualan (pcs)</label>
+                        <input type="number" name="bonus_pcs_threshold" id="bonus_pcs_threshold" class="form-control"
+                            value="{{ old('bonus_pcs_threshold', $scheme->bonus_pcs_threshold) }}" min="1"
+                            placeholder="Global: {{ $globalDefaults['bonus_pcs_threshold'] }}">
+                        <div class="form-hint">Global: {{ $globalDefaults['bonus_pcs_threshold'] }} pcs</div>
+                        @error('bonus_pcs_threshold')
+                            <div class="form-error">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="bonus_amount" class="form-label">Bonus Per Kelipatan (Rp)</label>
+                        <input type="number" name="bonus_amount" id="bonus_amount" class="form-control"
+                            value="{{ old('bonus_amount', $scheme->bonus_amount) }}" min="0"
+                            placeholder="Global: {{ number_format($globalDefaults['bonus_amount'], 0, ',', '.') }}">
+                        <div class="form-hint">Global: Rp {{ number_format($globalDefaults['bonus_amount'], 0, ',', '.') }}
+                        </div>
+                        @error('bonus_amount')
+                            <div class="form-error">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
                 <div class="flex gap-3 mt-6">
                     <button type="submit" class="btn btn-primary btn-block btn-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

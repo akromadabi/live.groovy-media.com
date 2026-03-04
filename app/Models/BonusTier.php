@@ -29,13 +29,21 @@ class BonusTier extends Model
      * - 40 sales = 20000 (2 * 10000)
      * - 80 sales = 40000 (4 * 10000)
      */
-    public static function getBonusForSales(int $salesCount): float
+    public static function getBonusForSales(int $salesCount, ?int $userThreshold = null, ?float $userBonusAmount = null): float
     {
-        $thresholdVal = \App\Models\Setting::getValue('bonus_pcs_threshold', 20);
-        $threshold = empty($thresholdVal) ? 20 : (int) $thresholdVal;
+        if ($userThreshold !== null) {
+            $threshold = $userThreshold;
+        } else {
+            $thresholdVal = \App\Models\Setting::getValue('bonus_pcs_threshold', 20);
+            $threshold = empty($thresholdVal) ? 20 : (int) $thresholdVal;
+        }
 
-        $bonusAmountVal = \App\Models\Setting::getValue('bonus_amount', 10000);
-        $bonusAmount = empty($bonusAmountVal) ? 10000 : (float) $bonusAmountVal;
+        if ($userBonusAmount !== null) {
+            $bonusAmount = $userBonusAmount;
+        } else {
+            $bonusAmountVal = \App\Models\Setting::getValue('bonus_amount', 10000);
+            $bonusAmount = empty($bonusAmountVal) ? 10000 : (float) $bonusAmountVal;
+        }
 
         if ($threshold <= 0 || $salesCount < $threshold) {
             return 0;

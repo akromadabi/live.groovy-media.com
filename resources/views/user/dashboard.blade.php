@@ -141,12 +141,53 @@
         <div class="term-card">
             <div class="term-header">
                 <span class="term-badge t2">T2</span>
-                <span class="term-period">16 - Akhir</span>
+                <span class="term-period">16 - {{ $endDay }}</span>
             </div>
             <div class="term-body">
                 <div class="term-hours">{{ $termData['t2_hours'] ?? 0 }} <small>jam</small></div>
                 <div class="term-salary">Rp {{ number_format($termData['t2_salary'] ?? 0, 0, ',', '.') }}</div>
             </div>
+        </div>
+    </div>
+
+    <!-- Target Achievement Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="flex items-center justify-between mb-2">
+                <h3 style="font-size: 0.95rem; font-weight: 600; margin: 0;">🎯 Target Bulan {{ \Carbon\Carbon::createFromDate($selectedYear ?: now()->year, $selectedMonth ?: now()->month, 1)->translatedFormat('F') }}</h3>
+                <span
+                    style="font-size: 0.8rem; font-weight: 600; color: {{ $targetMet ? 'var(--success)' : 'var(--danger, #ef4444)' }};">
+                    {{ $monthlyHours }}/{{ $monthlyTarget }} jam
+                </span>
+            </div>
+            <!-- Progress Bar -->
+            <div
+                style="background: var(--border, #e5e7eb); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 8px;">
+                <div
+                    style="background: {{ $targetMet ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #818cf8)' }}; height: 100%; border-radius: 10px; width: {{ $targetPercent }}%; transition: width 0.5s ease;">
+                </div>
+            </div>
+            <div class="flex items-center justify-between" style="font-size: 0.8rem;">
+                <span style="color: var(--text-muted, #6b7280);">{{ $targetPercent }}%</span>
+                @if($targetMet)
+                    <span style="color: var(--success, #10b981); font-weight: 600;">✅ Target Tercapai!</span>
+                @else
+                    <span style="color: var(--text-muted, #6b7280);">Kurang {{ $monthlyTarget - $monthlyHours }} jam lagi</span>
+                @endif
+            </div>
+
+            @if($monthlyTarget > 0)
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #e5e7eb);">
+                    @if($targetMet)
+                        <span style="font-size: 0.85rem; color: var(--text-muted, #6b7280);">💰</span>
+                        <span style="font-size: 1rem; font-weight: 700; color: var(--success, #10b981);">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</span>
+                    @else
+                        <span style="font-size: 0.85rem; color: var(--text-muted, #6b7280);">💰</span>
+                        <span style="font-size: 1rem; font-weight: 700; color: var(--text-muted, #6b7280);">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted, #6b7280);">(target belum tercapai)</span>
+                    @endif
+                </div>
+            @endif
         </div>
     </div>
 

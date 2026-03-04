@@ -134,6 +134,42 @@ class DashboardController extends Controller
             ->sortByDesc('sales')
             ->values();
 
+        // Calculate target achievement data for the selected/current month
+        $targetMonth = $selectedMonth ?: now()->month;
+        $targetYear = $selectedYear ?: now()->year;
+        $endDay = \Carbon\Carbon::createFromDate($targetYear, $targetMonth, 1)->endOfMonth()->day;
+
+        $monthlyTarget = $scheme ? $scheme->calculateMonthlyTarget($targetYear, $targetMonth) : 0;
+
+        // Get monthly hours for target comparison
+        $targetMonthStart = \Carbon\Carbon::createFromDate($targetYear, $targetMonth, 1)->startOfDay();
+        $targetMonthEnd = $targetMonthStart->copy()->endOfMonth();
+        $targetMonthMinutes = Attendance::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'validated'])
+            ->whereBetween('attendance_date', [$targetMonthStart, $targetMonthEnd])
+            ->sum('live_duration_minutes');
+        $monthlyHours = round($targetMonthMinutes / 60, 1);
+        $targetMet = $monthlyHours >= $monthlyTarget;
+
+        // Calculate bonus (always calculate for display, regardless of target met)
+        $monthlyBonus = 0;
+        if ($scheme) {
+            $dailySales = Attendance::where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'validated'])
+                ->whereBetween('attendance_date', [$targetMonthStart, $targetMonthEnd])
+                ->selectRaw('DATE(attendance_date) as date, SUM(sales_count) as total_sales')
+                ->groupBy('date')
+                ->get();
+
+            $userThreshold = $scheme->bonus_pcs_threshold;
+            $userBonusAmt = $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : null;
+            foreach ($dailySales as $day) {
+                $monthlyBonus += \App\Models\BonusTier::getBonusForSales((int) $day->total_sales, $userThreshold, $userBonusAmt);
+            }
+        }
+
+        $targetPercent = $monthlyTarget > 0 ? min(100, round(($monthlyHours / $monthlyTarget) * 100)) : 0;
+
         return view('user.dashboard', compact(
             'stats',
             'recentAttendances',
@@ -143,7 +179,13 @@ class DashboardController extends Controller
             'selectedYear',
             'filterLabel',
             'hoursPerUser',
-            'salesPerUser'
+            'salesPerUser',
+            'endDay',
+            'monthlyTarget',
+            'monthlyHours',
+            'monthlyBonus',
+            'targetMet',
+            'targetPercent'
         ));
     }
 

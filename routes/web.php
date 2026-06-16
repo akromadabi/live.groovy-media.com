@@ -67,6 +67,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Users
     Route::resource('users', AdminUserController::class);
     Route::post('users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
+    Route::post('users/{user}/impersonate', [AdminUserController::class, 'impersonate'])->name('users.impersonate');
 
     // Salary Schemes
     Route::get('salary-schemes', [AdminSalarySchemeController::class, 'index'])->name('salary-schemes.index');
@@ -79,6 +80,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::put('bonus-scheme', [AdminBonusTierController::class, 'update'])->name('bonus-scheme.update');
 
     // TikTok Reports
+    Route::delete('tiktok-reports/bulk-delete', [AdminTiktokReportController::class, 'bulkDestroy'])->name('tiktok-reports.bulk-delete');
     Route::resource('tiktok-reports', AdminTiktokReportController::class)->except(['edit', 'update']);
     Route::post('tiktok-reports/details/{detail}/match-status', [AdminTiktokReportController::class, 'updateMatchStatus'])->name('tiktok-reports.update-match-status');
 
@@ -99,6 +101,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('salary-records-generate-all', [AdminSalaryRecordController::class, 'generateAll'])->name('salary-records.generate-all');
     Route::post('salary-records-bulk-download', [AdminSalaryRecordController::class, 'bulkDownload'])->name('salary-records.bulk-download');
 });
+
+Route::post('/leave-impersonate', [AdminUserController::class, 'leaveImpersonate'])->name('leave-impersonate')->middleware('auth');
 
 // User Routes
 Route::prefix('user')->name('user.')->middleware(['auth', 'role:user'])->group(function () {

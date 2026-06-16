@@ -2,6 +2,50 @@
 
 @section('title', 'Riwayat Absensi')
 
+@php
+    function sortUrl($column) {
+        $currentSort = request('sort', 'attendance_date');
+        $currentDirection = request('direction', 'desc');
+        
+        $direction = ($currentSort === $column && $currentDirection === 'asc') ? 'desc' : 'asc';
+        
+        return request()->fullUrlWithQuery([
+            'sort' => $column,
+            'direction' => $direction
+        ]);
+    }
+    
+    function sortIcon($column) {
+        $currentSort = request('sort', 'attendance_date');
+        $currentDirection = request('direction', 'desc');
+        
+        if ($currentSort !== $column) {
+            return '<span style="opacity: 0.3; font-size: 0.8rem;">↕</span>';
+        }
+        
+        return $currentDirection === 'asc' 
+            ? '<span style="color: var(--primary); font-size: 0.8rem;">▲</span>' 
+            : '<span style="color: var(--primary); font-size: 0.8rem;">▼</span>';
+    }
+@endphp
+
+@push('styles')
+    <style>
+        .sortable-link {
+            color: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: color var(--transition);
+        }
+        .sortable-link:hover {
+            color: var(--primary);
+        }
+    </style>
+@endpush
+
 @section('content')
     <!-- Filter Bar -->
     <div class="card mb-6">
@@ -9,7 +53,7 @@
             <form action="{{ route('admin.attendances.index') }}" method="GET" class="filter-bar-grid"
                 style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
-                    <select name="user_id" class="form-control form-select">
+                    <select name="user_id" class="form-control form-select" onchange="this.form.submit()">
                         <option value="">-- Pilih User --</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
@@ -19,7 +63,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <select name="year" class="form-control form-select">
+                    <select name="year" class="form-control form-select" onchange="this.form.submit()">
                         <option value="">-- Pilih Tahun --</option>
                         @for($y = now()->year; $y >= 2020; $y--)
                             <option value="{{ $y }}" {{ request('year', now()->year) == $y ? 'selected' : '' }}>{{ $y }}</option>
@@ -27,7 +71,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <select name="month" class="form-control form-select">
+                    <select name="month" class="form-control form-select" onchange="this.form.submit()">
                         <option value="">-- Pilih Bulan --</option>
                         @for($m = 1; $m <= 12; $m++)
                             <option value="{{ $m }}" {{ request('month', now()->month) == $m ? 'selected' : '' }}>
@@ -37,14 +81,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <select name="term" class="form-control form-select">
+                    <select name="term" class="form-control form-select" onchange="this.form.submit()">
                         <option value="" {{ request('term') == '' ? 'selected' : '' }}>-- Satu Bulan --</option>
                         <option value="1" {{ request('term') == '1' ? 'selected' : '' }}>Termin 1 (1-15)</option>
                         <option value="2" {{ request('term') == '2' ? 'selected' : '' }}>Termin 2 (16-Akhir)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <select name="status" class="form-control form-select">
+                    <select name="status" class="form-control form-select" onchange="this.form.submit()">
                         <option value="">-- Semua Status --</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="validated" {{ request('status') == 'validated' ? 'selected' : '' }}>Tervalidasi
@@ -52,23 +96,26 @@
                         <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary btn-block">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        Filter
-                    </button>
-                </div>
             </form>
         </div>
     </div>
 
-    <!-- Stats Grid -->
+    <!-- Stats Grid - Mobile Optimized (6 boxes matches user dashboard layout) -->
     <div class="stats-grid-mobile mb-4">
         <div class="stat-card-compact">
             <div class="stat-icon-sm primary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Total Live</div>
+                <div class="stat-number">{{ number_format($totals['total_live']) }}</div>
+            </div>
+        </div>
+        <div class="stat-card-compact">
+            <div class="stat-icon-sm success">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -76,11 +123,45 @@
             </div>
             <div>
                 <div class="stat-label">Total Jam</div>
-                <div class="stat-number">{{ $totals['total_hours'] }}</div>
+                <div class="stat-number">{{ number_format($totals['total_hours'], 1) }} jam</div>
             </div>
         </div>
         <div class="stat-card-compact">
-            <div class="stat-icon-sm success">
+            <div class="stat-icon-sm warning">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Penjualan</div>
+                <div class="stat-number">{{ number_format($totals['total_sales']) }}</div>
+            </div>
+        </div>
+        <div class="stat-card-compact">
+            <div class="stat-icon-sm danger">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Gaji</div>
+                <div class="stat-number">
+                    @if($bonusInfo)
+                        Rp {{ number_format(($bonusInfo['total_salary'] ?? 0) + ($bonusInfo['target_met'] ? $bonusInfo['sales_bonus'] : 0), 0, ',', '.') }}
+                    @else
+                        Rp -
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Stats - berjajar seperti box atas -->
+    <div class="stats-grid-mobile mb-4" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="stat-card-compact">
+            <div class="stat-icon-sm primary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -88,11 +169,11 @@
             </div>
             <div>
                 <div class="stat-label">Konten Edit</div>
-                <div class="stat-number">{{ $totals['total_content_edit'] }}</div>
+                <div class="stat-number">{{ number_format($totals['total_content_edit']) }}</div>
             </div>
         </div>
         <div class="stat-card-compact">
-            <div class="stat-icon-sm warning">
+            <div class="stat-icon-sm success">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -100,19 +181,7 @@
             </div>
             <div>
                 <div class="stat-label">Konten Live</div>
-                <div class="stat-number">{{ $totals['total_content_live'] }}</div>
-            </div>
-        </div>
-        <div class="stat-card-compact">
-            <div class="stat-icon-sm danger">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-            </div>
-            <div>
-                <div class="stat-label">Total Sales</div>
-                <div class="stat-number">{{ $totals['total_sales'] }}</div>
+                <div class="stat-number">{{ number_format($totals['total_content_live']) }}</div>
             </div>
         </div>
     </div>
@@ -146,40 +215,74 @@
                 </div>
             </div>
 
-            <!-- Bonus & Total Card -->
-            <div class="bonus-card {{ $bonusInfo['target_met'] ? 'bonus-met' : 'bonus-pending' }}">
-                <div class="bonus-header">
-                    <span class="bonus-status">
-                        {{ $bonusInfo['user_name'] }}
-                        @if($bonusInfo['target_met'])
-                            • ✓ Target Tercapai
-                        @else
-                            • ⏳ Belum Tercapai
-                        @endif
-                    </span>
-                    <span class="bonus-progress">{{ $bonusInfo['monthly_hours'] }}/{{ $bonusInfo['target_hours'] }} jam</span>
-                </div>
-                <div class="bonus-body">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center;">
-                        <span class="bonus-label">Gaji Pokok (T1 + T2)</span>
-                        <span style="font-weight: 600;">Rp
-                            {{ number_format($bonusInfo['total_salary'] ?? 0, 0, ',', '.') }}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="bonus-label">Bonus Penjualan ({{ $bonusInfo['monthly_sales'] }} pcs)</span>
-                        <span class="bonus-amount">Rp {{ number_format($bonusInfo['sales_bonus'] ?? 0, 0, ',', '.') }}</span>
-                    </div>
-                    @if(!$bonusInfo['target_met'] && $bonusInfo['sales_bonus'] > 0)
-                        <div class="bonus-note">*bonus berlaku jika target tercapai</div>
-                    @endif
-                    <div class="slip-divider" style="background: rgba(var(--primary-rgb), 0.1); margin: 12px 0;"></div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 600; color: white;">Total Gaji</span>
-                        <span style="font-weight: 700; color: white; font-size: 1.1rem;">
-                            Rp
-                            {{ number_format(($bonusInfo['total_salary'] ?? 0) + ($bonusInfo['target_met'] ? $bonusInfo['sales_bonus'] : 0), 0, ',', '.') }}
+            <!-- Target Achievement Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    @php
+                        $targetPercent = $bonusInfo['target_hours'] > 0 ? min(100, round(($bonusInfo['monthly_hours'] / $bonusInfo['target_hours']) * 100)) : 0;
+                        $selectedYear = request('year', now()->year);
+                        $selectedMonth = request('month', now()->month);
+                    @endphp
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 style="font-size: 0.95rem; font-weight: 600; margin: 0;">🎯 Target {{ $bonusInfo['user_name'] }} - Bulan {{ \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->translatedFormat('F') }}</h3>
+                        <span
+                            style="font-size: 0.8rem; font-weight: 600; color: {{ $bonusInfo['target_met'] ? 'var(--success)' : 'var(--danger, #ef4444)' }};">
+                            {{ $bonusInfo['monthly_hours'] }}/{{ $bonusInfo['target_hours'] }} jam
                         </span>
                     </div>
+                    <!-- Progress Bar -->
+                    <div
+                        style="background: var(--border, #e5e7eb); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 8px;">
+                        <div
+                            style="background: {{ $bonusInfo['target_met'] ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #818cf8)' }}; height: 100%; border-radius: 10px; width: {{ $targetPercent }}%; transition: width 0.5s ease;">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between" style="font-size: 0.8rem;">
+                        <span style="color: var(--text-muted, #6b7280);">{{ $targetPercent }}%</span>
+                        @if($bonusInfo['target_met'])
+                            <span style="color: var(--success, #10b981); font-weight: 600;">✅ Target Tercapai!</span>
+                        @else
+                            <span style="color: var(--text-muted, #6b7280);">Kurang {{ max(0, $bonusInfo['target_hours'] - $bonusInfo['monthly_hours']) }} jam lagi</span>
+                        @endif
+                    </div>
+
+                    @if($bonusInfo['target_hours'] > 0)
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #e5e7eb); display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted, #6b7280);">💰 Bonus Penjualan:</span>
+                                <div>
+                                    @if($bonusInfo['target_met'])
+                                        <span style="font-size: 1rem; font-weight: 700; color: var(--success, #10b981);">Rp {{ number_format($bonusInfo['sales_bonus'], 0, ',', '.') }}</span>
+                                    @else
+                                        <span style="font-size: 1rem; font-weight: 700; color: var(--text-muted, #6b7280);">Rp {{ number_format($bonusInfo['sales_bonus'], 0, ',', '.') }}</span>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted, #6b7280);">(target belum tercapai)</span>
+                                    @endif
+                                </div>
+                            </div>
+                            
+                            @php
+                                $t1 = $bonusInfo['termData']['t1']['salary'] ?? 0;
+                                $t2 = $bonusInfo['termData']['t2']['salary'] ?? 0;
+                                $bonus = $bonusInfo['target_met'] ? ($bonusInfo['sales_bonus'] ?? 0) : 0;
+                                $totalSalary = $t1 + $t2 + $bonus;
+                            @endphp
+                            
+                            <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed var(--border, #e5e7eb); padding-top: 8px; margin-top: 4px;">
+                                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-color, #1e293b);">Estimasi Total Gaji (T1 + T2 + Bonus):</span>
+                                <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color, #4f46e5);">Rp {{ number_format($totalSalary, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                    @else
+                        @php
+                            $t1 = $bonusInfo['termData']['t1']['salary'] ?? 0;
+                            $t2 = $bonusInfo['termData']['t2']['salary'] ?? 0;
+                            $totalSalary = $t1 + $t2;
+                        @endphp
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #e5e7eb); display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-color, #1e293b);">Estimasi Total Gaji (T1 + T2):</span>
+                            <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color, #4f46e5);">Rp {{ number_format($totalSalary, 0, ',', '.') }}</span>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -239,14 +342,47 @@
                         <th style="width: 40px;">
                             <input type="checkbox" id="select-all" onchange="toggleSelectAll()">
                         </th>
-                        <th>User</th>
-                        <th>Tanggal</th>
-                        <th>Durasi</th>
-                        <th class="hide-on-mobile">Konten Edit</th>
-                        <th class="hide-on-mobile">Konten Live</th>
-                        <th class="hide-on-mobile">Penjualan</th>
+                        <th>
+                            <a href="{{ sortUrl('user') }}" class="sortable-link">
+                                User {!! sortIcon('user') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ sortUrl('attendance_date') }}" class="sortable-link">
+                                Tanggal {!! sortIcon('attendance_date') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ sortUrl('created_at') }}" class="sortable-link">
+                                Waktu Input {!! sortIcon('created_at') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ sortUrl('live_duration_minutes') }}" class="sortable-link">
+                                Durasi {!! sortIcon('live_duration_minutes') !!}
+                            </a>
+                        </th>
+                        <th class="hide-on-mobile">
+                            <a href="{{ sortUrl('content_edit_count') }}" class="sortable-link">
+                                Konten Edit {!! sortIcon('content_edit_count') !!}
+                            </a>
+                        </th>
+                        <th class="hide-on-mobile">
+                            <a href="{{ sortUrl('content_live_count') }}" class="sortable-link">
+                                Konten Live {!! sortIcon('content_live_count') !!}
+                            </a>
+                        </th>
+                        <th class="hide-on-mobile">
+                            <a href="{{ sortUrl('sales_count') }}" class="sortable-link">
+                                Penjualan {!! sortIcon('sales_count') !!}
+                            </a>
+                        </th>
                         <th class="hide-on-mobile">Gaji</th>
-                        <th class="hide-on-mobile">Status</th>
+                        <th class="hide-on-mobile">
+                            <a href="{{ sortUrl('status') }}" class="sortable-link">
+                                Status {!! sortIcon('status') !!}
+                            </a>
+                        </th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -279,6 +415,14 @@
                                 </div>
                             </td>
                             <td>{{ $attendance->attendance_date->format('d M Y') }}</td>
+                            <td>
+                                <div style="font-weight: 500;">
+                                    {{ $attendance->created_at ? $attendance->created_at->format('d M Y') : '-' }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                                    {{ $attendance->created_at ? $attendance->created_at->format('H:i') : '' }}
+                                </div>
+                            </td>
                             <td>{{ $attendance->formatted_duration }}</td>
                             <td class="hide-on-mobile">{{ $attendance->content_edit_count }}</td>
                             <td class="hide-on-mobile">{{ $attendance->content_live_count }}</td>
@@ -347,7 +491,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center text-muted">Tidak ada data absensi.</td>
+                            <td colspan="11" class="text-center text-muted">Tidak ada data absensi.</td>
                         </tr>
                     @endforelse
                 </tbody>

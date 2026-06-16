@@ -9,7 +9,7 @@
             <form action="{{ route('admin.salaries.index') }}" method="GET" class="flex items-center gap-3"
                 style="flex-wrap: wrap;">
                 <span class="text-muted" style="font-size: 0.85rem;">Periode:</span>
-                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;">
+                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;" onchange="this.form.submit()">
                     <option value="">Semua</option>
                     @foreach($years as $year)
                         <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
@@ -17,7 +17,7 @@
                         </option>
                     @endforeach
                 </select>
-                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;">
+                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;" onchange="this.form.submit()">
                     <option value="">Semua</option>
                     @for($m = 1; $m <= 12; $m++)
                         <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
@@ -25,19 +25,11 @@
                         </option>
                     @endfor
                 </select>
-                <select name="term" class="form-control form-select" style="width: auto; min-width: 100px;">
+                <select name="term" class="form-control form-select" style="width: auto; min-width: 100px;" onchange="this.form.submit()">
                     <option value="">Semua</option>
                     <option value="1" {{ request('term') == '1' ? 'selected' : '' }}>T1 (1-15)</option>
                     <option value="2" {{ request('term') == '2' ? 'selected' : '' }}>T2 (16-akhir)</option>
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16"
-                        height="16">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    Filter
-                </button>
             </form>
         </div>
     </div>

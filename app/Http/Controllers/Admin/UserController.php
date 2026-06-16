@@ -204,4 +204,50 @@ class UserController extends Controller
         $status = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
         return back()->with('success', "User berhasil {$status}.");
     }
+
+    /**
+     * Impersonate a user
+     */
+    public function impersonate(User $user)
+    {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Aksi tidak diizinkan.');
+        }
+
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Tidak dapat melakukan login bypass ke akun sendiri.');
+        }
+
+        if (!$user->is_active) {
+            return back()->with('error', 'Akun user yang dipilih tidak aktif.');
+        }
+
+        // Store original admin ID in session
+        session(['impersonate' => auth()->id()]);
+
+        // Login as the user
+        auth()->login($user);
+
+        return redirect()->route('user.dashboard')->with('success', "Berhasil login bypass sebagai {$user->name}.");
+    }
+
+    /**
+     * Leave impersonation and return to admin
+     */
+    public function leaveImpersonate()
+    {
+        if (!session()->has('impersonate')) {
+            abort(403, 'Aksi tidak diizinkan.');
+        }
+
+        $adminId = session()->pull('impersonate');
+        $admin = User::find($adminId);
+
+        if ($admin) {
+            auth()->login($admin);
+            return redirect()->route('admin.users.index')->with('success', 'Kembali ke sesi Admin.');
+        }
+
+        return redirect()->route('login')->with('error', 'Gagal kembali ke sesi Admin.');
+    }
 }

@@ -1,4 +1,101 @@
 <!-- Bottom Navigation (Mobile) - Modern Style -->
+<style>
+/* Custom premium bottom navigation styling */
+.bottom-nav {
+    background: rgba(255, 255, 255, 0.82) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.04) !important;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+[data-theme="dark"] .bottom-nav {
+    background: rgba(15, 23, 42, 0.85) !important; /* Slate-900 with transparency */
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.bottom-nav-container {
+    padding: 0.5rem 1rem 0.25rem !important;
+}
+
+.bottom-nav-item {
+    position: relative;
+    padding: 0.4rem 0.5rem !important;
+    color: #94a3b8 !important; /* Muted slate */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    gap: 0.15rem !important;
+    overflow: visible;
+}
+
+.bottom-nav-item svg {
+    width: 24px !important;
+    height: 24px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    stroke-width: 1.8;
+}
+
+/* Active State styling */
+.bottom-nav-item.active {
+    color: #4f46e5 !important; /* Indigo-600 */
+    font-weight: 600 !important;
+}
+
+[data-theme="dark"] .bottom-nav-item.active {
+    color: #818cf8 !important; /* Indigo-400 */
+}
+
+.bottom-nav-item.active svg {
+    transform: translateY(-2px) scale(1.08);
+    color: #4f46e5 !important;
+    filter: drop-shadow(0 2px 6px rgba(79, 70, 229, 0.25));
+}
+
+[data-theme="dark"] .bottom-nav-item.active svg {
+    color: #818cf8 !important;
+    filter: drop-shadow(0 2px 8px rgba(129, 140, 248, 0.35));
+}
+
+/* Hover/active indicator pill */
+.bottom-nav-item::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 14px;
+    height: 3px;
+    background: #4f46e5;
+    border-radius: 99px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .bottom-nav-item::after {
+    background: #818cf8;
+}
+
+.bottom-nav-item.active::after {
+    transform: translateX(-50%) scaleX(1);
+}
+
+/* Subtle bounce click animation */
+.bottom-nav-item:active svg {
+    transform: translateY(-2px) scale(0.9);
+}
+
+/* Let's improve the text label style */
+.bottom-nav-item span {
+    font-size: 0.7rem !important;
+    letter-spacing: 0.01em;
+    transition: all 0.3s ease;
+}
+
+.bottom-nav-item.active span {
+    transform: scale(1.02);
+}
+</style>
+
 <nav class="bottom-nav">
     <div class="bottom-nav-container">
         @if(auth()->user()->isAdmin())

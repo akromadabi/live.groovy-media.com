@@ -20,7 +20,7 @@ class AttendanceController extends Controller
         // Filter by user
         $selectedUser = null;
         if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
+            $query->where('attendances.user_id', $request->user_id);
             $selectedUser = User::find($request->user_id);
         }
 
@@ -39,14 +39,44 @@ class AttendanceController extends Controller
         } else {
             $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay()->toDateString();
         }
-        $query->whereBetween('attendance_date', [$startDate, $endDate]);
+        $query->whereBetween('attendances.attendance_date', [$startDate, $endDate]);
 
         // Filter by status
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('attendances.status', $request->status);
         }
 
-        $attendances = $query->orderByDesc('attendance_date')->paginate(20);
+        // Sorting
+        $sort = $request->input('sort', 'attendance_date');
+        $direction = $request->input('direction', 'desc');
+        $allowedSorts = [
+            'user',
+            'attendance_date',
+            'live_duration_minutes',
+            'content_edit_count',
+            'content_live_count',
+            'sales_count',
+            'status',
+            'created_at'
+        ];
+
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'attendance_date';
+        }
+
+        if (!in_array(strtolower($direction), ['asc', 'desc'])) {
+            $direction = 'desc';
+        }
+
+        if ($sort === 'user') {
+            $query->join('users', 'attendances.user_id', '=', 'users.id')
+                ->select('attendances.*')
+                ->orderBy('users.name', $direction);
+        } else {
+            $query->orderBy('attendances.' . $sort, $direction);
+        }
+
+        $attendances = $query->paginate(20);
         $users = User::where('role', 'user')->orderBy('name')->get();
 
         // Calculate totals for filtered result
@@ -62,12 +92,14 @@ class AttendanceController extends Controller
         $totalContentEdit = (clone $totalsQuery)->sum('content_edit_count');
         $totalContentLive = (clone $totalsQuery)->sum('content_live_count');
         $totalSales = (clone $totalsQuery)->sum('sales_count');
+        $totalLive = (clone $totalsQuery)->count();
 
         $totals = [
             'total_hours' => round($totalMinutes / 60, 1),
             'total_content_edit' => $totalContentEdit,
             'total_content_live' => $totalContentLive,
             'total_sales' => $totalSales,
+            'total_live' => $totalLive,
         ];
 
         // Calculate bonus info if specific user selected

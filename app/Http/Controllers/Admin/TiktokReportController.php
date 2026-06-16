@@ -137,7 +137,25 @@ class TiktokReportController extends Controller
         }
 
         if (empty($successMessages) && !empty($errorMessages)) {
+            if ($request->ajax()) {
+                session()->flash('error', implode("\n", $errorMessages));
+                return response()->json([
+                    'success' => false,
+                    'message' => implode("\n", $errorMessages)
+                ], 422);
+            }
             return back()->with('error', implode("\n", $errorMessages));
+        }
+
+        if ($request->ajax()) {
+            foreach ($flashMessages as $key => $msg) {
+                session()->flash($key, $msg);
+            }
+            return response()->json([
+                'success' => true,
+                'messages' => $flashMessages,
+                'redirect' => route('admin.tiktok-reports.index')
+            ]);
         }
 
         return redirect()->route('admin.tiktok-reports.index')
@@ -188,23 +206,34 @@ class TiktokReportController extends Controller
         $nameIndex = null;
         $durationIndex = null;
         $dateIndex = null;
+        $endTimeIndex = null;
 
         foreach ($headerLower as $index => $col) {
-            // Name column: "nama", "user", "name", "livestream" (EN), "streaming langsung" (ID)
+            // Name column: "nama", "user", "name", "livestream" (EN), "streaming langsung" (ID), "title" (EN)
             if (
                 $nameIndex === null && (
                     strpos($col, 'nama') !== false ||
                     strpos($col, 'user') !== false ||
                     $col === 'name' ||
                     $col === 'livestream' ||
-                    strpos($col, 'streaming') !== false
+                    strpos($col, 'streaming') !== false ||
+                    strpos($col, 'title') !== false
                 )
             ) {
                 $nameIndex = $index;
             }
             // Duration column: "durasi" (Indonesian) or "duration" (English)
             if ($durationIndex === null && (strpos($col, 'durasi') !== false || strpos($col, 'duration') !== false)) {
-                $durationIndex = $index;
+                if (
+                    strpos($col, 'rata-rata') === false &&
+                    strpos($col, 'average') === false &&
+                    strpos($col, 'avg') === false &&
+                    strpos($col, 'viewing') === false &&
+                    strpos($col, 'menonton') === false &&
+                    strpos($col, 'tonton') === false
+                ) {
+                    $durationIndex = $index;
+                }
             }
             // Date column: "tanggal" (ID), "waktu mulai" (ID), "start time" (EN), "date" (EN)
             if (
@@ -217,10 +246,19 @@ class TiktokReportController extends Controller
             ) {
                 $dateIndex = $index;
             }
+            // End Time column: "selesai" (ID), "end time" (EN)
+            if (
+                $endTimeIndex === null && (
+                    strpos($col, 'selesai') !== false ||
+                    strpos($col, 'end') !== false
+                )
+            ) {
+                $endTimeIndex = $index;
+            }
         }
 
-        if ($durationIndex === null) {
-            throw new \Exception('Kolom "Duration" / "Durasi" tidak ditemukan di file.');
+        if ($durationIndex === null && ($dateIndex === null || $endTimeIndex === null)) {
+            throw new \Exception('Kolom "Duration" / "Durasi" tidak ditemukan di file, dan data waktu mulai/selesai untuk menghitung durasi tidak lengkap.');
         }
         if ($dateIndex === null) {
             throw new \Exception('Kolom "Start time" / "Waktu mulai" / "Tanggal" tidak ditemukan di file.');
@@ -229,24 +267,15 @@ class TiktokReportController extends Controller
         // Check if duration is in hours (JAM) or seconds
         // "Durasi (Jam)" or column containing "jam"/"hour" = hours format
         // "Duration" or "Durasi" alone = seconds format (raw TikTok data)
-        $durationHeader = $headerLower[$durationIndex];
-        $isHoursFormat = strpos($durationHeader, 'jam') !== false ||
-            strpos($durationHeader, 'hour') !== false;
+        $isHoursFormat = false;
+        if ($durationIndex !== null) {
+            $durationHeader = $headerLower[$durationIndex];
+            $isHoursFormat = strpos($durationHeader, 'jam') !== false ||
+                strpos($durationHeader, 'hour') !== false;
+        }
 
-        $report = TiktokReport::create([
-            'filename' => $storedFilename,
-            'original_filename' => $originalFilename,
-            'report_date' => now(),
-            'uploaded_by' => auth()->id(),
-            'total_records' => count($dataRows),
-            'total_duration_minutes' => 0,
-        ]);
-
-        $totalDurationMinutes = 0;
-        $importedCount = 0;
-        $matchedCount = 0;
-
-        // Process each data row
+        // Pre-parse and validate all rows to detect duplicates
+        $parsedRows = [];
         foreach ($dataRows as $row) {
             // Skip empty rows or rows without date
             if (!isset($row[$dateIndex]) || empty(trim(strval($row[$dateIndex])))) {
@@ -262,8 +291,93 @@ class TiktokReportController extends Controller
             }
 
             // Parse duration
-            $durationValue = isset($row[$durationIndex]) ? $row[$durationIndex] : 0;
-            $durationMinutes = $this->parseDuration($durationValue, $isHoursFormat);
+            $durationMinutes = 0;
+            if ($durationIndex !== null) {
+                $durationValue = isset($row[$durationIndex]) ? $row[$durationIndex] : 0;
+                $durationMinutes = $this->parseDuration($durationValue, $isHoursFormat);
+            } elseif ($endTimeIndex !== null && isset($row[$dateIndex]) && isset($row[$endTimeIndex])) {
+                $startTimeStr = trim(strval($row[$dateIndex]));
+                $endTimeStr = trim(strval($row[$endTimeIndex]));
+                if (!empty($startTimeStr) && !empty($endTimeStr)) {
+                    try {
+                        $start = Carbon::parse($startTimeStr);
+                        $end = Carbon::parse($endTimeStr);
+                        $durationMinutes = (int) $start->diffInMinutes($end);
+                    } catch (\Exception $e) {
+                        $durationMinutes = 0;
+                    }
+                }
+            }
+
+            if ($durationMinutes <= 0) {
+                continue;
+            }
+
+            $notes = null;
+            if ($nameIndex !== null && isset($row[$nameIndex]) && !empty(trim(strval($row[$nameIndex])))) {
+                $notes = trim(strval($row[$nameIndex]));
+            }
+
+            $parsedRows[] = [
+                'live_date' => $liveDate,
+                'duration_minutes' => $durationMinutes,
+                'notes' => $notes,
+                'original_row' => $row
+            ];
+        }
+
+        if (empty($parsedRows)) {
+            throw new \Exception('Tidak ada data live valid yang dapat diimport dari file ini.');
+        }
+
+        // Check each row against the database to detect duplicates
+        $newRows = [];
+        $duplicateCount = 0;
+
+        foreach ($parsedRows as $pRow) {
+            $notes = $pRow['notes'];
+            $liveDate = $pRow['live_date'];
+            $durationMinutes = $pRow['duration_minutes'];
+
+            $existsQuery = TiktokReportDetail::where('live_date', $liveDate)
+                ->where('duration_minutes', $durationMinutes);
+
+            if ($notes !== null) {
+                $existsQuery->where('notes', $notes);
+            } else {
+                $existsQuery->whereNull('notes');
+            }
+
+            if ($existsQuery->exists()) {
+                $duplicateCount++;
+            } else {
+                $newRows[] = $pRow;
+            }
+        }
+
+        // 1. If all rows are duplicates, refuse the file and notify the user
+        if ($duplicateCount === count($parsedRows)) {
+            throw new \Exception("Seluruh data live dalam file ini ({$duplicateCount} baris) sudah pernah diupload sebelumnya.");
+        }
+
+        // 2. If some rows are new, create the report container and import only those new rows
+        $report = TiktokReport::create([
+            'filename' => $storedFilename,
+            'original_filename' => $originalFilename,
+            'report_date' => now(),
+            'uploaded_by' => auth()->id(),
+            'total_records' => count($newRows),
+            'total_duration_minutes' => 0,
+        ]);
+
+        $totalDurationMinutes = 0;
+        $matchedCount = 0;
+
+        foreach ($newRows as $nRow) {
+            $liveDate = $nRow['live_date'];
+            $durationMinutes = $nRow['duration_minutes'];
+            $notes = $nRow['notes'];
+            $row = $nRow['original_row'];
 
             // Parse name and match user
             $userId = null;
@@ -311,30 +425,32 @@ class TiktokReportController extends Controller
                 }
             }
 
-            if ($durationMinutes > 0) {
-                TiktokReportDetail::create([
-                    'tiktok_report_id' => $report->id,
-                    'user_id' => $userId,
-                    'live_date' => $liveDate,
-                    'duration_minutes' => $durationMinutes,
-                    'match_status' => $matchStatus,
-                    'matched_attendance_id' => $matchedAttendanceId,
-                    'attendance_duration_minutes' => $attendanceDurationMinutes,
-                ]);
+            TiktokReportDetail::create([
+                'tiktok_report_id' => $report->id,
+                'user_id' => $userId,
+                'live_date' => $liveDate,
+                'duration_minutes' => $durationMinutes,
+                'match_status' => $matchStatus,
+                'matched_attendance_id' => $matchedAttendanceId,
+                'attendance_duration_minutes' => $attendanceDurationMinutes,
+                'notes' => $notes,
+            ]);
 
-                $totalDurationMinutes += $durationMinutes;
-                $importedCount++;
-            }
+            $totalDurationMinutes += $durationMinutes;
         }
 
         // Update total duration
         $report->update([
             'total_duration_minutes' => $totalDurationMinutes,
-            'total_records' => $importedCount,
         ]);
 
-        $totalRows = count($dataRows);
-        $message = "📄 {$originalFilename}: {$importedCount}/{$totalRows} baris diimport (" . number_format($totalDurationMinutes / 60, 1) . " jam)";
+        $newCount = count($newRows);
+        $message = "📄 {$originalFilename}: {$newCount} baris baru diimport";
+        if ($duplicateCount > 0) {
+            $message .= " (dilewati {$duplicateCount} baris duplikat)";
+        }
+        $message .= " [" . number_format($totalDurationMinutes / 60, 1) . " jam]";
+
         if ($matchedCount > 0) {
             $message .= " — {$matchedCount} cocok dengan absensi";
         }
@@ -444,6 +560,34 @@ class TiktokReportController extends Controller
 
         return redirect()->route('admin.tiktok-reports.index')
             ->with('success', 'Report berhasil dihapus.');
+    }
+
+    /**
+     * Remove multiple specified reports (bulk delete)
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|string',
+        ]);
+
+        $ids = explode(',', $validated['ids']);
+        $reports = TiktokReport::whereIn('id', $ids)->get();
+
+        if ($reports->isEmpty()) {
+            return redirect()->route('admin.tiktok-reports.index')
+                ->with('error', 'Tidak ada report yang dipilih.');
+        }
+
+        DB::transaction(function () use ($reports) {
+            foreach ($reports as $report) {
+                $report->details()->delete();
+                $report->delete();
+            }
+        });
+
+        return redirect()->route('admin.tiktok-reports.index')
+            ->with('success', count($reports) . ' report berhasil dihapus.');
     }
 
     /**

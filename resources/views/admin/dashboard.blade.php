@@ -61,7 +61,7 @@
             <form action="{{ route('admin.dashboard') }}" method="GET" class="flex items-center gap-3"
                 style="flex-wrap: wrap;">
                 <span class="text-muted" style="font-size: 0.85rem;">Periode:</span>
-                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;">
+                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;" onchange="this.form.submit()">
                     <option value="">Semua Bulan</option>
                     @for($m = 1; $m <= 12; $m++)
                         <option value="{{ $m }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
@@ -69,20 +69,12 @@
                         </option>
                     @endfor
                 </select>
-                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;">
+                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;" onchange="this.form.submit()">
                     <option value="">Semua Tahun</option>
                     @for($y = now()->year; $y >= 2020; $y--)
                         <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                     @endfor
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16"
-                        height="16">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    Filter
-                </button>
                 @if($selectedMonth || $selectedYear)
                     <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary btn-sm">Reset</a>
                 @endif

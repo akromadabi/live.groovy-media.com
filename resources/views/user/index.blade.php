@@ -8,30 +8,23 @@
         <div class="card-body" style="padding: 1rem;">
             <form action="{{ route('user.attendances.index') }}" method="GET">
                 <div class="mobile-filter-grid">
-                    <select name="year" class="form-control form-select">
+                    <select name="year" class="form-control form-select" onchange="this.form.submit()">
                         @for($y = now()->year; $y >= 2020; $y--)
                             <option value="{{ $y }}" {{ request('year', now()->year) == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endfor
                     </select>
-                    <select name="month" class="form-control form-select">
+                    <select name="month" class="form-control form-select" onchange="this.form.submit()">
                         @for($m = 1; $m <= 12; $m++)
                             <option value="{{ $m }}" {{ request('month', now()->month) == $m ? 'selected' : '' }}>
                                 {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('M') }}
                             </option>
                         @endfor
                     </select>
-                    <select name="term" class="form-control form-select">
+                    <select name="term" class="form-control form-select" onchange="this.form.submit()">
                         <option value="" {{ request('term') == '' ? 'selected' : '' }}>Semua</option>
                         <option value="1" {{ request('term') == '1' ? 'selected' : '' }}>T1</option>
                         <option value="2" {{ request('term') == '2' ? 'selected' : '' }}>T2</option>
                     </select>
-                    <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        Filter
-                    </button>
                 </div>
             </form>
         </div>

@@ -24,7 +24,7 @@
             <form action="{{ route('user.dashboard') }}" method="GET" class="flex items-center gap-3"
                 style="flex-wrap: wrap;">
                 <span class="text-muted" style="font-size: 0.85rem;">Periode:</span>
-                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;">
+                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;" onchange="this.form.submit()">
                     <option value="">Semua Bulan</option>
                     @for($m = 1; $m <= 12; $m++)
                         <option value="{{ $m }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
@@ -32,13 +32,12 @@
                         </option>
                     @endfor
                 </select>
-                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;">
+                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;" onchange="this.form.submit()">
                     <option value="">Semua Tahun</option>
                     @for($y = now()->year; $y >= 2020; $y--)
                         <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                     @endfor
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                 @if($selectedMonth || $selectedYear)
                     <a href="{{ route('user.dashboard') }}" class="btn btn-secondary btn-sm">Reset</a>
                 @endif
@@ -177,15 +176,40 @@
             </div>
 
             @if($monthlyTarget > 0)
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #e5e7eb);">
-                    @if($targetMet)
-                        <span style="font-size: 0.85rem; color: var(--text-muted, #6b7280);">💰</span>
-                        <span style="font-size: 1rem; font-weight: 700; color: var(--success, #10b981);">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</span>
-                    @else
-                        <span style="font-size: 0.85rem; color: var(--text-muted, #6b7280);">💰</span>
-                        <span style="font-size: 1rem; font-weight: 700; color: var(--text-muted, #6b7280);">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted, #6b7280);">(target belum tercapai)</span>
-                    @endif
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #e5e7eb); display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted, #6b7280);">💰 Bonus Penjualan:</span>
+                        <div>
+                            @if($targetMet)
+                                <span style="font-size: 1rem; font-weight: 700; color: var(--success, #10b981);">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</span>
+                            @else
+                                <span style="font-size: 1rem; font-weight: 700; color: var(--text-muted, #6b7280);">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted, #6b7280);">(target belum tercapai)</span>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    @php
+                        $t1 = $termData['t1_salary'] ?? 0;
+                        $t2 = $termData['t2_salary'] ?? 0;
+                        $bonus = $targetMet ? ($monthlyBonus ?? 0) : 0;
+                        $totalSalary = $t1 + $t2 + $bonus;
+                    @endphp
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed var(--border, #e5e7eb); padding-top: 8px; margin-top: 4px;">
+                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-color, #1e293b);">Estimasi Total Gaji (T1 + T2 + Bonus):</span>
+                        <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color, #4f46e5);">Rp {{ number_format($totalSalary, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            @else
+                @php
+                    $t1 = $termData['t1_salary'] ?? 0;
+                    $t2 = $termData['t2_salary'] ?? 0;
+                    $totalSalary = $t1 + $t2;
+                @endphp
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #e5e7eb); display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-color, #1e293b);">Estimasi Total Gaji (T1 + T2):</span>
+                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color, #4f46e5);">Rp {{ number_format($totalSalary, 0, ',', '.') }}</span>
                 </div>
             @endif
         </div>

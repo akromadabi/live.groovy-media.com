@@ -9,13 +9,13 @@
             <form action="{{ route('admin.salary-records.index') }}" method="GET" class="flex items-center gap-3"
                 style="flex-wrap: wrap;">
                 <span class="text-muted" style="font-size: 0.85rem;">Filter:</span>
-                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;">
+                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;" onchange="this.form.submit()">
                     <option value="">Tahun</option>
                     @foreach($years as $year)
                         <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
                     @endforeach
                 </select>
-                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;">
+                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;" onchange="this.form.submit()">
                     <option value="">Bulan</option>
                     @for($m = 1; $m <= 12; $m++)
                         <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
@@ -23,17 +23,16 @@
                         </option>
                     @endfor
                 </select>
-                <select name="term" class="form-control form-select" style="width: auto; min-width: 100px;">
+                <select name="term" class="form-control form-select" style="width: auto; min-width: 100px;" onchange="this.form.submit()">
                     <option value="">Termin</option>
                     <option value="1" {{ request('term') == '1' ? 'selected' : '' }}>T1</option>
                     <option value="2" {{ request('term') == '2' ? 'selected' : '' }}>T2</option>
                 </select>
-                <select name="status" class="form-control form-select" style="width: auto; min-width: 100px;">
+                <select name="status" class="form-control form-select" style="width: auto; min-width: 100px;" onchange="this.form.submit()">
                     <option value="">Status</option>
                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Dibayar</option>
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                 @if(request()->hasAny(['year', 'month', 'term', 'status']))
                     <a href="{{ route('admin.salary-records.index') }}" class="btn btn-secondary btn-sm">Reset</a>
                 @endif

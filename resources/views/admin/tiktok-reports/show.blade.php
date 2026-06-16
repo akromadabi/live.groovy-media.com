@@ -73,16 +73,16 @@
                                         <span>{{ $detail->user->name }}</span>
                                     </div>
                                 @else
-                                    <span class="text-muted">{{ $detail->tiktok_username ?? '-' }}</span>
+                                    <span class="text-muted">{{ $detail->notes ?? '-' }}</span>
                                 @endif
                             </td>
                             <td>{{ $detail->live_date ? $detail->live_date->format('d M Y') : '-' }}</td>
-                            <td>{{ floor($detail->report_duration_minutes / 60) }}j {{ $detail->report_duration_minutes % 60 }}m
+                            <td>{{ floor($detail->duration_minutes / 60) }}j {{ $detail->duration_minutes % 60 }}m
                             </td>
                             <td>
-                                @if($detail->attendance_duration_minutes !== null)
-                                    {{ floor($detail->attendance_duration_minutes / 60) }}j
-                                    {{ $detail->attendance_duration_minutes % 60 }}m
+                                @if($detail->matchedAttendance)
+                                    {{ floor($detail->matchedAttendance->live_duration_minutes / 60) }}j
+                                    {{ $detail->matchedAttendance->live_duration_minutes % 60 }}m
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -90,7 +90,7 @@
                             <td>
                                 @php
                                     $tiktokMinutes = $detail->duration_minutes ?? 0;
-                                    $absenMinutes = $detail->attendance_duration_minutes ?? 0;
+                                    $absenMinutes = $detail->matchedAttendance ? $detail->matchedAttendance->live_duration_minutes : 0;
                                     $diff = $tiktokMinutes - $absenMinutes;
                                     $absDiffHours = round(abs($diff) / 60, 1);
                                 @endphp

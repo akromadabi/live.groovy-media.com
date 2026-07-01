@@ -88,6 +88,22 @@
 
     <!-- Scripts -->
     <script src="{{ asset('js/app.js') }}"></script>
+    <script>
+        function confirmDelete(formId) {
+            let message = 'Apakah Anda yakin ingin menghapus data ini?';
+            if (formId.includes('user')) {
+                message = 'Apakah Anda yakin ingin menghapus pengguna ini secara permanen?';
+            } else if (formId.includes('file') || formId.includes('report')) {
+                message = 'Apakah Anda yakin ingin menghapus file report Excel ini secara permanen? Semua data live yang terkait di dalamnya juga akan ikut terhapus.';
+            } else if (formId.includes('attendance') || formId.includes('absen')) {
+                message = 'Apakah Anda yakin ingin menghapus data absensi ini secara permanen?';
+            }
+            
+            if (confirm(message)) {
+                document.getElementById(formId).submit();
+            }
+        }
+    </script>
     @stack('scripts')
 </body>
 

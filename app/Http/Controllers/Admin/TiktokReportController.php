@@ -504,7 +504,7 @@ class TiktokReportController extends Controller
     }
 
     /**
-     * Parse duration value - supports hours (2,5 or 2.5) and seconds
+     * Parse duration value - supports hours (2,5 or 2.5), seconds, and XhYm format (e.g. 2h30m)
      */
     private function parseDuration($value, bool $isHours = true): int
     {
@@ -512,8 +512,24 @@ class TiktokReportController extends Controller
             return 0;
         }
 
-        // Convert to string and handle Indonesian decimal format (comma instead of dot)
-        $valueStr = strval($value);
+        $valueStr = trim(strval($value));
+
+        // Check if it's a string containing "h" or "m" (e.g. "2h30m", "2h", "45m")
+        if (preg_match('/h|m/i', $valueStr)) {
+            $hours = 0;
+            $minutes = 0;
+
+            if (preg_match('/(\d+)\s*h/i', $valueStr, $hMatch)) {
+                $hours = (int) $hMatch[1];
+            }
+            if (preg_match('/(\d+)\s*m/i', $valueStr, $mMatch)) {
+                $minutes = (int) $mMatch[1];
+            }
+
+            return ($hours * 60) + $minutes;
+        }
+
+        // Fallback to original logic (numeric values)
         $valueStr = str_replace(',', '.', $valueStr);
         $valueStr = preg_replace('/[^0-9.]/', '', $valueStr);
 

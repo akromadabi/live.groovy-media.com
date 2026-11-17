@@ -431,13 +431,520 @@
         white-space: nowrap;
     }
 
-    /* Print Styles */
+    /* Print Button Screen Styling */
+    .matrix-print-btn {
+        height: 32px;
+        padding: 0 0.85rem;
+        font-size: 0.78rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: 600;
+        border-radius: 6px;
+    }
+    @media (max-width: 576px) {
+        .matrix-print-btn-text {
+            display: none;
+        }
+        .matrix-print-btn {
+            padding: 0 0.5rem;
+        }
+    }
+
+    /* Hidden by default on screen */
+    .print-document-header,
+    .print-document-footer {
+        display: none;
+    }
+
+    /* ========================================================
+       EXECUTIVE-GRADE PRINT STYLING (A4 LANDSCAPE EPSON/PDF)
+       ======================================================== */
     @media print {
-        .sidebar, .header, .matrix-topbar, .app-header, .scroll-hint-bar, .view-switcher-pill { display: none !important; }
-        .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-        .matrix-table { width: 100% !important; min-width: 0 !important; font-size: 8px !important; }
-        .matrix-table th, .matrix-table td { padding: 2px !important; }
-        .sticky-col-user { position: static !important; width: auto !important; }
+        @page {
+            size: landscape;
+            margin: 7mm 8mm 7mm 8mm;
+        }
+
+        /* Force crisp color printing on color & mono printers */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            box-sizing: border-box !important;
+        }
+
+        html, body {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+            font-size: 7pt !important;
+            line-height: 1.2 !important;
+        }
+
+        /* Neutralize parent flex/sidebar/grid wrappers */
+        .app-container,
+        .main-content,
+        .page-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            display: block !important;
+            background: transparent !important;
+        }
+
+        /* Hide all screen-only UI components */
+        .sidebar,
+        .sidebar-overlay,
+        .header,
+        .app-header,
+        .matrix-topbar,
+        .scroll-hint-bar,
+        .view-switcher-pill,
+        .bottom-nav,
+        .impersonate-bar,
+        .matrix-legend-card,
+        nav,
+        header,
+        footer {
+            display: none !important;
+        }
+
+        /* ====================================================
+           1. EXECUTIVE PRINT HEADER (Kop & Metadata)
+           ==================================================== */
+        .print-document-header {
+            display: block !important;
+            margin-bottom: 6px !important;
+            border-bottom: 2px solid #0f172a !important;
+            padding-bottom: 5px !important;
+        }
+
+        .print-brand-row {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            margin-bottom: 5px !important;
+        }
+
+        .print-brand-left {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+
+        .print-logo-box {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 6px !important;
+            background: #4f46e5 !important;
+            color: #ffffff !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .print-logo-box svg {
+            color: #ffffff !important;
+            stroke: #ffffff !important;
+        }
+
+        .print-org-name {
+            font-size: 11pt !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            line-height: 1.15 !important;
+            margin: 0 !important;
+            letter-spacing: -0.01em !important;
+        }
+
+        .print-doc-heading {
+            font-size: 7pt !important;
+            color: #475569 !important;
+            font-weight: 700 !important;
+            margin: 1px 0 0 0 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+        }
+
+        .print-doc-meta {
+            text-align: right !important;
+        }
+
+        .print-period-badge {
+            display: inline-block !important;
+            background: #f1f5f9 !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 2px 7px !important;
+            border-radius: 4px !important;
+            font-size: 8pt !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+
+        .print-meta-sub {
+            font-size: 6pt !important;
+            color: #64748b !important;
+            margin-top: 2px !important;
+        }
+
+        /* Executive Summary KPI Row */
+        .print-summary-bar {
+            display: grid !important;
+            grid-template-columns: repeat(5, 1fr) !important;
+            gap: 5px !important;
+            margin-top: 5px !important;
+        }
+
+        .print-summary-col {
+            background: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 4px !important;
+            padding: 3px 5px !important;
+            text-align: center !important;
+        }
+
+        .print-summary-lbl {
+            font-size: 5.5pt !important;
+            font-weight: 700 !important;
+            color: #64748b !important;
+            display: block !important;
+            text-transform: uppercase !important;
+            line-height: 1 !important;
+        }
+
+        .print-summary-num {
+            font-size: 8.5pt !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            line-height: 1.2 !important;
+            margin-top: 1px !important;
+            display: block !important;
+        }
+        .print-summary-num small {
+            font-size: 6pt !important;
+            font-weight: 600 !important;
+            color: #64748b !important;
+        }
+
+        /* ====================================================
+           2. PROFESSIONAL PRINT MATRIX TABLE (ZERO SCROLLBARS)
+           ==================================================== */
+        .matrix-container {
+            border: 1.5px solid #64748b !important;
+            border-radius: 4px !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+            margin: 0 0 6px 0 !important;
+            width: 100% !important;
+            background: #ffffff !important;
+        }
+
+        .matrix-table-wrapper {
+            overflow: visible !important;
+            overflow-x: visible !important;
+            position: static !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .matrix-table {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
+            font-size: 6.5pt !important;
+        }
+
+        /* Strip sticky styles to avoid Chromium print engine offsets */
+        .matrix-table thead th,
+        .matrix-table thead th.sticky-col-user,
+        .matrix-table tbody td.sticky-col-user,
+        .matrix-table tfoot td,
+        .matrix-table tfoot td.sticky-col-user {
+            position: static !important;
+            top: auto !important;
+            left: auto !important;
+            bottom: auto !important;
+            z-index: auto !important;
+            box-shadow: none !important;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            padding: 2.5px 1px !important;
+            border: 1px solid #cbd5e1 !important;
+            text-align: center !important;
+            line-height: 1.15 !important;
+        }
+
+        .matrix-table thead th {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
+            border-bottom: 1.5px solid #64748b !important;
+        }
+
+        /* Host Column (Visible, Crisp, No Scrollbar) */
+        .sticky-col-user {
+            width: 110px !important;
+            min-width: 110px !important;
+            max-width: 110px !important;
+            text-align: left !important;
+            padding-left: 5px !important;
+            padding-right: 3px !important;
+            font-weight: 700 !important;
+            background: #f8fafc !important;
+            border-right: 1.5px solid #64748b !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        .sticky-col-user .avatar {
+            display: none !important;
+        }
+        .sticky-col-user .text-truncate {
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            font-size: 7pt !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+
+        /* Zebra Striping */
+        .matrix-table tbody tr:nth-child(even) td {
+            background-color: #f8fafc !important;
+        }
+        .matrix-table tbody tr:nth-child(even) td.sticky-col-user {
+            background-color: #f1f5f9 !important;
+        }
+
+        /* Day columns */
+        .matrix-table th.col-day {
+            width: auto !important;
+            min-width: 0 !important;
+        }
+        .col-day-num {
+            font-size: 6.8pt !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+        .col-day-name {
+            font-size: 5pt !important;
+            font-weight: 600 !important;
+            margin-top: 1px !important;
+            text-transform: uppercase !important;
+            color: #64748b !important;
+        }
+
+        .weekend-col {
+            background: #fff1f2 !important;
+        }
+        .weekend-col .col-day-num {
+            color: #dc2626 !important;
+        }
+        .weekend-col .col-day-name {
+            color: #ef4444 !important;
+        }
+
+        /* Summary columns at far right */
+        .col-summary-start {
+            border-left: 1.5px solid #64748b !important;
+        }
+        .col-summary-hdr {
+            width: 28px !important;
+            min-width: 28px !important;
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+            font-weight: 800 !important;
+            font-size: 6.2pt !important;
+        }
+        .col-summary {
+            width: 28px !important;
+            min-width: 28px !important;
+            background: #f8fafc !important;
+            font-weight: 700 !important;
+            font-size: 6.5pt !important;
+            color: #0f172a !important;
+        }
+        .col-summary small {
+            display: none !important;
+        }
+
+        /* Footer totals */
+        .matrix-table tfoot td {
+            background: #e2e8f0 !important;
+            font-weight: 800 !important;
+            border-top: 1.5px solid #64748b !important;
+        }
+        .matrix-table tfoot td.sticky-col-user {
+            font-weight: 800 !important;
+            font-size: 7pt !important;
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+        }
+        .matrix-table tfoot td.col-day div {
+            font-size: 5pt !important;
+            line-height: 1.1 !important;
+        }
+
+        /* Cell badges */
+        .cell-badge {
+            display: inline-block !important;
+            font-size: 5.8pt !important;
+            font-weight: 800 !important;
+            padding: 1px 1.5px !important;
+            border-radius: 2px !important;
+            min-width: 16px !important;
+            line-height: 1 !important;
+        }
+        .cell-success {
+            background: #d1fae5 !important;
+            color: #065f46 !important;
+            border: 1px solid #6ee7b7 !important;
+        }
+        .cell-warning {
+            background: #fef3c7 !important;
+            color: #92400e !important;
+            border: 1px solid #fcd34d !important;
+        }
+        .cell-pending {
+            background: #e0e7ff !important;
+            color: #3730a3 !important;
+            border: 1px dashed #818cf8 !important;
+        }
+        .cell-absent {
+            color: #94a3b8 !important;
+            font-size: 5.5pt !important;
+            opacity: 0.5 !important;
+        }
+
+        /* ====================================================
+           3. PROFESSIONAL PRINT CARD MODE (2-COLUMN GRID)
+           ==================================================== */
+        .host-cards-container {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+            width: 100% !important;
+        }
+
+        .host-matrix-card {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            background: #ffffff !important;
+            border: 1px solid #94a3b8 !important;
+            border-radius: 5px !important;
+            padding: 6px 8px !important;
+            box-shadow: none !important;
+        }
+
+        .host-card-header {
+            margin-bottom: 4px !important;
+        }
+        .host-stat-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 3px !important;
+            margin-bottom: 5px !important;
+        }
+        .host-stat-pill {
+            background: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 3px !important;
+            padding: 2px !important;
+            text-align: center !important;
+        }
+        .host-stat-val {
+            font-size: 7.5pt !important;
+            font-weight: 700 !important;
+        }
+        .host-stat-lbl {
+            font-size: 5pt !important;
+        }
+
+        .mini-calendar-grid {
+            display: grid !important;
+            grid-template-columns: repeat(7, 1fr) !important;
+            gap: 2px !important;
+            background: #f1f5f9 !important;
+            padding: 3px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 3px !important;
+        }
+        .mini-cal-day {
+            font-size: 5pt !important;
+            padding: 1.5px 1px !important;
+            border-radius: 2px !important;
+        }
+
+        /* ====================================================
+           4. PROFESSIONAL PRINT FOOTER & APPROVAL SIGNATURES
+           ==================================================== */
+        .print-document-footer {
+            display: block !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin-top: 8px !important;
+            padding-top: 6px !important;
+            border-top: 1px solid #cbd5e1 !important;
+        }
+
+        .print-legend-row {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            font-size: 6.5pt !important;
+            margin-bottom: 14px !important;
+            color: #475569 !important;
+        }
+        .print-legend-title {
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+
+        .print-approval-row {
+            display: flex !important;
+            align-items: flex-end !important;
+            justify-content: space-between !important;
+            padding: 0 45px !important;
+        }
+
+        .print-sign-box {
+            text-align: center !important;
+            width: 200px !important;
+        }
+
+        .print-sign-label {
+            font-size: 7pt !important;
+            color: #475569 !important;
+            margin-bottom: 35px !important;
+        }
+
+        .print-sign-line {
+            display: none !important;
+        }
+
+        .print-sign-name {
+            font-size: 8pt !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            border-bottom: 1px solid #0f172a !important;
+            padding-bottom: 2px !important;
+            margin: 0 !important;
+        }
+
+        .print-sign-sub {
+            font-size: 6.5pt !important;
+            color: #64748b !important;
+            margin-top: 2px !important;
+        }
     }
 </style>
 @endpush
@@ -470,10 +977,11 @@
             </div>
 
             <!-- Print / PDF Button -->
-            <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm" style="height: 32px; width: 34px; padding: 0; justify-content: center;" title="Cetak / PDF">
+            <button type="button" onclick="window.print()" class="btn btn-primary btn-sm matrix-print-btn" title="Cetak Dokumen / Simpan PDF (Landscape)">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="15" height="15">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
+                <span class="matrix-print-btn-text">Cetak Dokumen</span>
             </button>
         </div>
 
@@ -516,6 +1024,58 @@
         <button type="button" onclick="switchView('cards')" style="background: none; border: none; color: #4f46e5; font-weight: 700; font-size: 0.72rem; cursor: pointer; text-decoration: underline;">
             Mode Kartu
         </button>
+    </div>
+
+    <!-- ========================================================
+         EXECUTIVE PRINT DOCUMENT HEADER (Kop & Ringkasan KPI)
+         ======================================================== -->
+    <div class="print-document-header">
+        <div class="print-brand-row">
+            <div class="print-brand-left">
+                <div class="print-logo-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="print-org-name">{{ config('app.name', 'TikTok Live Manager') }}</h1>
+                    <p class="print-doc-heading">REKAPITULASI MATRIKS KEHADIRAN & JAM LIVE STREAMING HOST</p>
+                </div>
+            </div>
+
+            <div class="print-doc-meta">
+                <div class="print-period-badge">
+                    Periode: <strong>{{ \Carbon\Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y') }}</strong>
+                </div>
+                <div class="print-meta-sub">
+                    Dicetak: {{ now()->translatedFormat('d M Y, H:i') }} WIB &bull; Oleh: {{ auth()->user()->name ?? 'Administrator' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive KPI Summary Bar -->
+        <div class="print-summary-bar">
+            <div class="print-summary-col">
+                <span class="print-summary-lbl">TOTAL HOST</span>
+                <span class="print-summary-num">{{ count($users) }} <small>Orang</small></span>
+            </div>
+            <div class="print-summary-col">
+                <span class="print-summary-lbl">TOTAL JAM LIVE</span>
+                <span class="print-summary-num">{{ number_format(collect($userSummaries)->sum('total_hours'), 1) }} <small>Jam</small></span>
+            </div>
+            <div class="print-summary-col">
+                <span class="print-summary-lbl">TOTAL HARI MASUK</span>
+                <span class="print-summary-num">{{ collect($userSummaries)->sum('present_days') }} <small>Hari</small></span>
+            </div>
+            <div class="print-summary-col">
+                <span class="print-summary-lbl">TOTAL SALES TERJUAL</span>
+                <span class="print-summary-num">{{ number_format(collect($userSummaries)->sum('total_sales')) }} <small>Pcs</small></span>
+            </div>
+            <div class="print-summary-col">
+                <span class="print-summary-lbl">RATA-RATA / HOST</span>
+                <span class="print-summary-num">{{ count($users) > 0 ? round(collect($userSummaries)->sum('total_hours') / count($users), 1) : 0 }} <small>Jam/Host</small></span>
+            </div>
+        </div>
     </div>
 
     <!-- MODE 1: Table Matrix View -->
@@ -718,6 +1278,34 @@
                 Tidak ada data host.
             </div>
         @endforelse
+    </div>
+
+    <!-- ========================================================
+         PROFESSIONAL PRINT DOCUMENT FOOTER (Legenda & Pengesahan)
+         ======================================================== -->
+    <div class="print-document-footer">
+        <div class="print-legend-row">
+            <span class="print-legend-title">Keterangan:</span>
+            <span><span class="cell-badge cell-success">3.0</span> &ge; 3 Jam (Target Tercapai)</span>
+            <span><span class="cell-badge cell-warning">1.5</span> &lt; 3 Jam (Di Bawah Target)</span>
+            <span><span class="cell-badge cell-pending">2.0</span> Pending Verifikasi</span>
+            <span><span class="cell-badge cell-absent">&mdash;</span> Libur / Tidak Live</span>
+        </div>
+
+        <div class="print-approval-row">
+            <div class="print-sign-box">
+                <p class="print-sign-label">Dibuat &amp; Diverifikasi Oleh:</p>
+                <div class="print-sign-line"></div>
+                <p class="print-sign-name">{{ auth()->user()->name ?? 'Administrator' }}</p>
+                <p class="print-sign-sub">Admin / PIC Operasional Live</p>
+            </div>
+            <div class="print-sign-box">
+                <p class="print-sign-label">Mengetahui &amp; Menyetujui:</p>
+                <div class="print-sign-line"></div>
+                <p class="print-sign-name">( ___________________________ )</p>
+                <p class="print-sign-sub">Operational Manager / Head of Agency</p>
+            </div>
+        </div>
     </div>
 
     <!-- Compact Legend Card (Symmetrical & Clean) -->

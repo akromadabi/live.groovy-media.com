@@ -13,12 +13,15 @@ class Attendance extends Model
     protected $fillable = [
         'user_id',
         'attendance_date',
+        'session_name',
         'live_duration_minutes',
         'content_edit_count',
         'content_live_count',
         'sales_count',
         'status',
         'notes',
+        'proof_image',
+        'vt_link',
     ];
 
     protected function casts(): array
@@ -46,6 +49,18 @@ class Attendance extends Model
     public function tiktokReportDetail(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(TiktokReportDetail::class, 'matched_attendance_id');
+    }
+
+    /**
+     * Get the URL for the proof image
+     */
+    public function getProofImageUrlAttribute(): ?string
+    {
+        if (!$this->proof_image) {
+            return null;
+        }
+
+        return asset('storage/' . $this->proof_image);
     }
 
     /**

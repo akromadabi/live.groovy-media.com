@@ -369,6 +369,27 @@
                     <span style="font-size: 0.8rem; font-weight: 600;">Estimasi Total Payout (T1 + T2 + Bonus):</span>
                     <span style="font-size: 1rem; font-weight: 800; color: var(--primary);">Rp {{ number_format($totalSalary, 0, ',', '.') }}</span>
                 </div>
+
+                @if(!empty($bonusGamification))
+                    <!-- Gamification Bonus Tier Progress Bar -->
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border, #e5e7eb);">
+                        <div class="flex items-center justify-between mb-1" style="font-size: 0.75rem;">
+                            <span style="font-weight: 600; color: #6366f1;">
+                                🚀 Progres Bonus Tier ({{ $bonusGamification['current_sales'] }}/{{ $bonusGamification['next_target'] }} pcs)
+                            </span>
+                            <span style="font-weight: 700; color: #10b981;">
+                                Kurang {{ $bonusGamification['remaining_sales'] }} pcs lagi!
+                            </span>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.06); border-radius: 999px; height: 8px; overflow: hidden; margin-bottom: 4px;">
+                            <div style="background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%); height: 100%; border-radius: 999px; width: {{ $bonusGamification['progress_percent'] }}%; transition: width 0.6s ease;"></div>
+                        </div>
+                        <div class="flex items-center justify-between" style="font-size: 0.7rem; color: var(--text-muted);">
+                            <span>Tiap {{ $bonusGamification['threshold'] }} pcs = +Rp {{ number_format($bonusGamification['bonus_per_tier'], 0, ',', '.') }}</span>
+                            <span>Target Level {{ $bonusGamification['current_multiplier'] + 1 }}: Total Bonus Rp {{ number_format($bonusGamification['next_bonus_total'], 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

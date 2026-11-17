@@ -33,6 +33,15 @@ class SettingsController extends Controller
             'wa_reminder_time' => Setting::getValue('wa_reminder_time', '18:00'),
             'wa_report_time' => Setting::getValue('wa_report_time', '21:00'),
             'whatsapp_enabled' => Setting::getValue('whatsapp_enabled', false),
+
+            // Form & Policy Settings
+            'attendance_proof_enabled' => Setting::getValue('attendance_proof_enabled', true),
+            'attendance_proof_required' => Setting::getValue('attendance_proof_required', false),
+            'attendance_vt_link_enabled' => Setting::getValue('attendance_vt_link_enabled', true),
+            'attendance_vt_link_required' => Setting::getValue('attendance_vt_link_required', false),
+            'attendance_deadline_enabled' => Setting::getValue('attendance_deadline_enabled', false),
+            'attendance_deadline_days' => Setting::getValue('attendance_deadline_days', 1),
+            'attendance_deadline_time' => Setting::getValue('attendance_deadline_time', '23:59'),
         ];
 
         return view('admin.settings.index', compact('user', 'settings'));
@@ -82,6 +91,65 @@ class SettingsController extends Controller
      */
     public function updateSystem(Request $request)
     {
+        $group = $request->input('setting_group');
+
+        if ($group === 'attendance') {
+            $validated = $request->validate([
+                'attendance_proof_enabled' => 'nullable|boolean',
+                'attendance_proof_required' => 'nullable|boolean',
+                'attendance_vt_link_enabled' => 'nullable|boolean',
+                'attendance_vt_link_required' => 'nullable|boolean',
+                'attendance_deadline_enabled' => 'nullable|boolean',
+                'attendance_deadline_days' => 'nullable|integer|min:0|max:30',
+                'attendance_deadline_time' => 'nullable|string|max:10',
+            ]);
+
+            $validated['attendance_proof_enabled'] = $request->has('attendance_proof_enabled') ? 1 : 0;
+            $validated['attendance_proof_required'] = $request->has('attendance_proof_required') ? 1 : 0;
+            $validated['attendance_vt_link_enabled'] = $request->has('attendance_vt_link_enabled') ? 1 : 0;
+            $validated['attendance_vt_link_required'] = $request->has('attendance_vt_link_required') ? 1 : 0;
+            $validated['attendance_deadline_enabled'] = $request->has('attendance_deadline_enabled') ? 1 : 0;
+
+            foreach ($validated as $key => $value) {
+                Setting::setValue($key, $value ?? '');
+            }
+
+            return back()->with('success', 'Kebijakan formulir absensi berhasil disimpan.');
+        }
+
+        if ($group === 'whatsapp') {
+            $validated = $request->validate([
+                'whatsapp_api_url' => 'nullable|string|max:255',
+                'whatsapp_api_key' => 'nullable|string|max:255',
+                'whatsapp_sender_number' => 'nullable|string|max:30',
+                'whatsapp_admin_phone' => 'nullable|string|max:30',
+                'whatsapp_group_id' => 'nullable|string|max:50',
+                'wa_reminder_time' => 'nullable|string|max:10',
+                'wa_report_time' => 'nullable|string|max:10',
+                'whatsapp_enabled' => 'nullable|boolean',
+            ]);
+
+            $validated['whatsapp_enabled'] = $request->has('whatsapp_enabled') ? 1 : 0;
+
+            foreach ($validated as $key => $value) {
+                Setting::setValue($key, $value ?? '');
+            }
+
+            return back()->with('success', 'Pengaturan WhatsApp berhasil disimpan.');
+        }
+
+        if ($group === 'app') {
+            $validated = $request->validate([
+                'app_name' => 'nullable|string|max:255',
+            ]);
+
+            foreach ($validated as $key => $value) {
+                Setting::setValue($key, $value ?? '');
+            }
+
+            return back()->with('success', 'Pengaturan aplikasi berhasil disimpan.');
+        }
+
         $validated = $request->validate([
             'app_name' => 'nullable|string|max:255',
             'default_hourly_rate' => 'nullable|numeric|min:0',
@@ -95,10 +163,28 @@ class SettingsController extends Controller
             'wa_reminder_time' => 'nullable|string|max:10',
             'wa_report_time' => 'nullable|string|max:10',
             'whatsapp_enabled' => 'nullable|boolean',
+
+            // Attendance settings
+            'attendance_proof_enabled' => 'nullable|boolean',
+            'attendance_proof_required' => 'nullable|boolean',
+            'attendance_vt_link_enabled' => 'nullable|boolean',
+            'attendance_vt_link_required' => 'nullable|boolean',
+            'attendance_deadline_enabled' => 'nullable|boolean',
+            'attendance_deadline_days' => 'nullable|integer|min:0|max:30',
+            'attendance_deadline_time' => 'nullable|string|max:10',
         ]);
 
-        // Handle checkbox
-        $validated['whatsapp_enabled'] = $request->has('whatsapp_enabled') ? 1 : 0;
+        // Handle checkboxes only if present or relevant
+        if ($request->hasAny(['whatsapp_enabled', 'whatsapp_api_url'])) {
+            $validated['whatsapp_enabled'] = $request->has('whatsapp_enabled') ? 1 : 0;
+        }
+        if ($request->hasAny(['attendance_proof_enabled', 'attendance_proof_required', 'attendance_vt_link_enabled', 'attendance_deadline_enabled', 'attendance_deadline_days'])) {
+            $validated['attendance_proof_enabled'] = $request->has('attendance_proof_enabled') ? 1 : 0;
+            $validated['attendance_proof_required'] = $request->has('attendance_proof_required') ? 1 : 0;
+            $validated['attendance_vt_link_enabled'] = $request->has('attendance_vt_link_enabled') ? 1 : 0;
+            $validated['attendance_vt_link_required'] = $request->has('attendance_vt_link_required') ? 1 : 0;
+            $validated['attendance_deadline_enabled'] = $request->has('attendance_deadline_enabled') ? 1 : 0;
+        }
 
         foreach ($validated as $key => $value) {
             Setting::setValue($key, $value ?? '');

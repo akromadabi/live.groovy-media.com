@@ -17,11 +17,11 @@
             <h3 class="card-title">Tambah Absensi Baru</h3>
         </div>
         <div class="card-body">
-            <form action="{{ route('admin.attendances.store') }}" method="POST">
+            <form action="{{ route('admin.attendances.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
-                <div class="form-group">
-                    <label for="user_id" class="form-label">User</label>
+                <div class="form-group mb-3">
+                    <label for="user_id" class="form-label">User / Host</label>
                     <select name="user_id" id="user_id" class="form-control form-select" required>
                         <option value="">Pilih User</option>
                         @foreach($users as $user)
@@ -35,16 +35,28 @@
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label for="attendance_date" class="form-label">Tanggal</label>
-                    <input type="date" name="attendance_date" id="attendance_date" class="form-control"
-                        value="{{ old('attendance_date', date('Y-m-d')) }}" required>
-                    @error('attendance_date')
-                        <div class="form-error">{{ $message }}</div>
-                    @enderror
+                <div class="form-row mb-3">
+                    <div class="form-group mb-0" style="flex: 1.2;">
+                        <label for="attendance_date" class="form-label">Tanggal</label>
+                        <input type="date" name="attendance_date" id="attendance_date" class="form-control"
+                            value="{{ old('attendance_date', date('Y-m-d')) }}" required>
+                        @error('attendance_date')
+                            <div class="form-error">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group mb-0" style="flex: 1;">
+                        <label for="session_name" class="form-label">Sesi / Shift</label>
+                        <select name="session_name" id="session_name" class="form-control form-select">
+                            <option value="Sesi 1" {{ old('session_name', 'Sesi 1') == 'Sesi 1' ? 'selected' : '' }}>Sesi 1 (Pagi)</option>
+                            <option value="Sesi 2" {{ old('session_name') == 'Sesi 2' ? 'selected' : '' }}>Sesi 2 (Siang/Sore)</option>
+                            <option value="Sesi 3" {{ old('session_name') == 'Sesi 3' ? 'selected' : '' }}>Sesi 3 (Malam)</option>
+                            <option value="Sesi 4" {{ old('session_name') == 'Sesi 4' ? 'selected' : '' }}>Sesi 4 (Subuh/Lembur)</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group mb-3">
                     <label for="live_duration_hours" class="form-label">Durasi Live (Jam)</label>
                     <select name="live_duration_hours" id="live_duration_hours" class="form-control form-select" required>
                         <option value="">Pilih Durasi</option>
@@ -59,8 +71,8 @@
                     @enderror
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
+                <div class="form-row mb-3">
+                    <div class="form-group mb-0">
                         <label for="content_edit_count" class="form-label">Jumlah Konten Edit</label>
                         <select name="content_edit_count" id="content_edit_count" class="form-control form-select">
                             <option value="0" {{ old('content_edit_count', 0) == 0 ? 'selected' : '' }}>0</option>
@@ -71,7 +83,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group mb-0">
                         <label for="content_live_count" class="form-label">Jumlah Konten Live</label>
                         <select name="content_live_count" id="content_live_count" class="form-control form-select">
                             <option value="0" {{ old('content_live_count', 0) == 0 ? 'selected' : '' }}>0</option>
@@ -84,19 +96,34 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="sales_count" class="form-label">Jumlah Penjualan</label>
+                <div class="form-group mb-3">
+                    <label for="sales_count" class="form-label">Jumlah Penjualan (pcs)</label>
                     <input type="number" name="sales_count" id="sales_count" class="form-control"
                         value="{{ old('sales_count', 0) }}" min="0" required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group mb-3">
+                    <label for="proof_image" class="form-label flex items-center justify-between">
+                        <span>📸 Bukti Screenshot (Opsional)</span>
+                        <span class="text-xs text-muted" style="color: #10b981;">⚡ Auto-Compress HD</span>
+                    </label>
+                    <input type="file" name="proof_image" id="proof_image" class="form-control" accept="image/*">
+                    <div id="proof-preview"></div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="vt_link" class="form-label">🔗 Link Video TikTok / VT (Opsional)</label>
+                    <input type="url" name="vt_link" id="vt_link" class="form-control"
+                        placeholder="https://vt.tiktok.com/..." value="{{ old('vt_link') }}">
+                </div>
+
+                <div class="form-group mb-3">
                     <label for="notes" class="form-label">Catatan (Opsional)</label>
                     <textarea name="notes" id="notes" class="form-control" rows="3"
                         placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
                 </div>
 
-                <div class="flex gap-3 mt-6">
+                <div class="flex gap-3 mt-4">
                     <button type="submit" class="btn btn-primary">Simpan</button>
                     <a href="{{ route('admin.attendances.index') }}" class="btn btn-secondary">Batal</a>
                 </div>
@@ -104,3 +131,16 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/image-compressor.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const proofInput = document.getElementById('proof_image');
+        const proofPreview = document.getElementById('proof-preview');
+        if (proofInput && window.ImageCompressor) {
+            window.ImageCompressor.attachToFileInput(proofInput, proofPreview);
+        }
+    });
+</script>
+@endpush

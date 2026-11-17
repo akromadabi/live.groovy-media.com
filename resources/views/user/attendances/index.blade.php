@@ -17,6 +17,51 @@
             grid-column: span 2;
         }
     }
+    .gamification-card {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        border-radius: var(--radius-lg, 10px);
+        padding: 0.75rem 1rem;
+    }
+    .proof-thumb {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        object-fit: cover;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        transition: transform 0.15s ease;
+    }
+    .proof-thumb:hover {
+        transform: scale(1.1);
+    }
+    .image-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    .image-modal-overlay.active {
+        display: flex;
+    }
+    .image-modal-content {
+        max-width: 90vw;
+        max-height: 90vh;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .image-modal-content img {
+        display: block;
+        max-width: 100%;
+        max-height: 85vh;
+        object-fit: contain;
+    }
 </style>
 @endpush
 
@@ -143,6 +188,37 @@
         </div>
     </div>
 
+    <!-- Gamification & Bonus Progress Bar (Real-Time) -->
+    <div class="gamification-card mb-3">
+        <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-2">
+                <span style="font-size: 1.1rem;">🔥</span>
+                <div>
+                    <h4 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--text);">Progres Menuju Bonus Berikutnya</h4>
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">
+                        Tiap kelipatan <strong>{{ $bonusInfo['threshold'] ?? 20 }} pcs</strong> penjualan berhak bonus <strong>Rp {{ number_format($bonusInfo['bonus_amount_per_tier'] ?? 10000, 0, ',', '.') }}</strong>
+                    </span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: #6366f1;">
+                    {{ $bonusInfo['monthly_sales'] ?? 0 }} / {{ $bonusInfo['next_tier_target'] ?? 20 }} pcs
+                </span>
+                <div style="font-size: 0.72rem; color: #10b981; font-weight: 600;">
+                    Tinggal {{ $bonusInfo['remaining_to_next'] ?? 0 }} pcs lagi!
+                </div>
+            </div>
+        </div>
+        <!-- Progress Bar -->
+        <div style="background: rgba(0,0,0,0.08); border-radius: 999px; height: 10px; overflow: hidden; position: relative;">
+            <div style="background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%); height: 100%; border-radius: 999px; width: {{ $bonusInfo['tier_progress_percent'] ?? 0 }}%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+        </div>
+        <div class="flex items-center justify-between mt-2" style="font-size: 0.72rem; color: var(--text-muted);">
+            <span>Level Bonus Saat Ini: <strong>{{ $bonusInfo['current_multiplier'] ?? 0 }}x (Rp {{ number_format(($bonusInfo['current_multiplier'] ?? 0) * ($bonusInfo['bonus_amount_per_tier'] ?? 10000), 0, ',', '.') }})</strong></span>
+            <span>Target Berikutnya: <strong>Total Rp {{ number_format($bonusInfo['next_bonus_total'] ?? 0, 0, ',', '.') }}</strong></span>
+        </div>
+    </div>
+
     <!-- Attendance Table (Desktop) / Cards (Mobile) -->
     <div class="card">
         <div class="card-header flex items-center justify-between" style="padding: 0.65rem 0.85rem;">
@@ -166,11 +242,12 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th style="width: 120px;">Tanggal</th>
+                        <th style="width: 130px;">Tanggal & Sesi</th>
                         <th>Durasi Live</th>
                         <th>Konten</th>
                         <th>Penjualan</th>
                         <th>Gaji Sesi</th>
+                        <th>Bukti & VT</th>
                         <th>Status TikTok</th>
                         <th>Status</th>
                         <th style="width: 80px; text-align: center;">Aksi</th>
@@ -194,7 +271,10 @@
                         <tr>
                             <td>
                                 <div class="font-medium text-sm">{{ $attendance->attendance_date->translatedFormat('d M Y') }}</div>
-                                <div class="text-xs text-muted">{{ $attendance->attendance_date->translatedFormat('l') }}</div>
+                                <div class="text-xs text-muted flex items-center gap-1 mt-0.5">
+                                    <span class="badge badge-secondary badge-xs" style="font-size: 0.68rem; padding: 1px 5px;">{{ $attendance->session_name ?? 'Sesi 1' }}</span>
+                                    <span>{{ $attendance->attendance_date->translatedFormat('D') }}</span>
+                                </div>
                             </td>
                             <td>
                                 <span class="badge badge-secondary" style="font-weight: 600;">{{ $attendance->formatted_duration }}</span>
@@ -212,11 +292,26 @@
                                 <span class="font-medium text-sm" style="color: var(--success);">Rp {{ number_format($salary, 0, ',', '.') }}</span>
                             </td>
                             <td>
+                                <div class="flex items-center gap-2">
+                                    @if($attendance->proof_image)
+                                        <img src="{{ $attendance->proof_image_url }}" alt="Bukti" class="proof-thumb" onclick="openImageModal('{{ $attendance->proof_image_url }}')" title="Klik untuk lihat bukti screenshot">
+                                    @else
+                                        <span class="text-muted text-xs">—</span>
+                                    @endif
+
+                                    @if($attendance->vt_link)
+                                        <a href="{{ $attendance->vt_link }}" target="_blank" rel="noopener noreferrer" class="badge badge-sm" style="background: #111; color: #fff; text-decoration: none;" title="Buka video VT TikTok">
+                                            VT ↗
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                            <td>
                                 @if($totalTiktok > 0)
                                     @if(abs($totalDiff) < 10)
                                         <span class="badge badge-success badge-sm" title="Sesuai ({{ $formatDuration(abs($totalDiff)) }})">✓ Sesuai</span>
                                     @elseif($totalDiff >= 10)
-                                        <span class="badge badge-sm" style="background: #3b82f6; color: white;" title="TikTok +{{ $formatDuration($totalDiff) }}">↑ TikTok +{{ $formatDuration($totalDiff) }}</span>
+                                        <span class="badge badge-sm" style="background: #3b82f6; color: white;" title="TikTok +{{ $formatDuration($totalDiff) }}">↑ TT +{{ $formatDuration($totalDiff) }}</span>
                                     @else
                                         <span class="badge badge-danger badge-sm" title="Absen +{{ $formatDuration(abs($totalDiff)) }}">↓ Absen +{{ $formatDuration(abs($totalDiff)) }}</span>
                                     @endif
@@ -258,7 +353,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted" style="padding: 2.5rem;">
+                            <td colspan="9" class="text-center text-muted" style="padding: 2.5rem;">
                                 Belum ada data absensi untuk periode ini
                             </td>
                         </tr>
@@ -289,10 +384,27 @@
                         <div class="date-month">{{ $attendance->attendance_date->translatedFormat('M') }}</div>
                     </div>
                     <div class="attendance-info">
-                        <div class="attendance-duration">{{ $attendance->formatted_duration }}</div>
+                        <div class="flex items-center gap-1 mb-0.5">
+                            <span class="attendance-duration">{{ $attendance->formatted_duration }}</span>
+                            <span class="badge badge-secondary badge-xs" style="font-size: 0.65rem;">{{ $attendance->session_name ?? 'Sesi 1' }}</span>
+                        </div>
                         <div class="attendance-meta">
                             Edit: {{ $attendance->content_edit_count }} • Live: {{ $attendance->content_live_count }} • Jual: {{ $attendance->sales_count }}
                         </div>
+                        @if($attendance->proof_image || $attendance->vt_link)
+                            <div class="flex items-center gap-2 mt-1">
+                                @if($attendance->proof_image)
+                                    <span onclick="openImageModal('{{ $attendance->proof_image_url }}')" style="font-size: 0.7rem; color: var(--primary); cursor: pointer; text-decoration: underline;">
+                                        📸 Lihat Bukti
+                                    </span>
+                                @endif
+                                @if($attendance->vt_link)
+                                    <a href="{{ $attendance->vt_link }}" target="_blank" rel="noopener noreferrer" style="font-size: 0.7rem; color: #6366f1;">
+                                        🔗 Link VT ↗
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                     <div class="attendance-right">
                         <div class="attendance-salary">Rp {{ number_format($salary, 0, ',', '.') }}</div>
@@ -333,4 +445,33 @@
             </div>
         @endif
     </div>
+
+    <!-- Image Modal Lightbox -->
+    <div id="imageModal" class="image-modal-overlay" onclick="closeImageModal()">
+        <div class="image-modal-content" onclick="event.stopPropagation()">
+            <div style="padding: 8px 12px; background: #1e293b; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; font-weight: 600;">Bukti Screenshot Live</span>
+                <button type="button" onclick="closeImageModal()" style="background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            <img id="modalImg" src="" alt="Bukti Live">
+        </div>
+    </div>
 @endsection
+
+@push('scripts')
+<script>
+    function openImageModal(url) {
+        const modal = document.getElementById('imageModal');
+        const img = document.getElementById('modalImg');
+        img.src = url;
+        modal.classList.add('active');
+    }
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeImageModal();
+    });
+</script>
+@endpush

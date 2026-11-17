@@ -427,6 +427,12 @@
             @endif
         </form>
         <div class="attendance-action-group">
+            <a href="{{ route('admin.attendances.matrix', ['year' => request('year', now()->year), 'month' => request('month', now()->month)]) }}" class="btn btn-secondary attendance-action-btn" style="border-color: #6366f1; color: #6366f1;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Matriks Kalender
+            </a>
             <a href="{{ route('admin.attendances.create') }}" class="btn btn-primary attendance-action-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -662,7 +668,7 @@
                         </th>
                         <th>
                             <a href="{{ sortUrl('attendance_date') }}" class="sortable-link">
-                                Tanggal {!! sortIcon('attendance_date') !!}
+                                Tanggal & Sesi {!! sortIcon('attendance_date') !!}
                             </a>
                         </th>
                         <th>
@@ -691,6 +697,8 @@
                             </a>
                         </th>
                         <th>Gaji</th>
+                        <th>Bukti & VT</th>
+                        <th>Cek TikTok (Discrepancy)</th>
                         <th>
                             <a href="{{ sortUrl('status') }}" class="sortable-link">
                                 Status {!! sortIcon('status') !!}
@@ -712,6 +720,8 @@
                                     $attendance->content_live_count * $scheme->content_live_rate +
                                     \App\Models\BonusTier::getBonusForSales($attendance->sales_count);
                             }
+                            $key = $attendance->user_id . '_' . $attendance->attendance_date->toDateString();
+                            $tt = $tiktokTotals[$key] ?? null;
                         @endphp
                         <tr>
                             <td>
@@ -727,7 +737,13 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ $attendance->attendance_date->format('d M Y') }}</td>
+                            <td>
+                                <div style="font-weight: 600;">{{ $attendance->attendance_date->format('d M Y') }}</div>
+                                <div class="text-xs text-muted flex items-center gap-1 mt-0.5">
+                                    <span class="badge badge-secondary badge-xs" style="font-size: 0.68rem; padding: 1px 5px;">{{ $attendance->session_name ?? 'Sesi 1' }}</span>
+                                    <span>{{ $attendance->attendance_date->translatedFormat('D') }}</span>
+                                </div>
+                            </td>
                             <td>
                                 <div style="font-weight: 500;">
                                     {{ $attendance->created_at ? $attendance->created_at->format('d M Y') : '-' }}
@@ -742,6 +758,43 @@
                             <td>{{ $attendance->sales_count }}</td>
                             <td class="font-medium" style="color: var(--success);">
                                 Rp {{ number_format($salary, 0, ',', '.') }}
+                            </td>
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    @if($attendance->proof_image)
+                                        <img src="{{ $attendance->proof_image_url }}" alt="Bukti" class="proof-thumb" onclick="openImageModal('{{ $attendance->proof_image_url }}')" title="Lihat bukti screenshot" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; cursor: pointer; border: 1px solid var(--border);">
+                                    @else
+                                        <span class="text-muted text-xs">—</span>
+                                    @endif
+
+                                    @if($attendance->vt_link)
+                                        <a href="{{ $attendance->vt_link }}" target="_blank" rel="noopener noreferrer" class="badge badge-sm" style="background: #111; color: #fff; text-decoration: none;" title="Buka video VT TikTok">
+                                            VT ↗
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                            <td>
+                                @if($tt)
+                                    @php
+                                        $diff = $attendance->live_duration_minutes - $tt['total_duration'];
+                                    @endphp
+                                    @if(abs($diff) <= 15)
+                                        <span class="badge badge-success badge-xs" title="Durasi cocok dengan data TikTok (selisih {{ $diff >= 0 ? '+' : '' }}{{ $diff }}m)">
+                                            ✓ Cocok
+                                        </span>
+                                    @elseif($diff > 15)
+                                        <span class="badge badge-danger badge-xs" style="background: #ef4444; color: #fff; font-weight: 600;" title="Klaim host melebihi data TikTok! (Klaim: {{ $attendance->formatted_duration }} vs TikTok: {{ round($tt['total_duration']/60, 1) }} jam)">
+                                            ⚠️ Selisih +{{ round($diff / 60, 1) }}j
+                                        </span>
+                                    @else
+                                        <span class="badge badge-info badge-xs" style="background: #3b82f6; color: #fff;" title="TikTok mencatat durasi lebih banyak (TikTok: {{ round($tt['total_duration']/60, 1) }} jam)">
+                                            ↑ TT +{{ round(abs($diff) / 60, 1) }}j
+                                        </span>
+                                    @endif
+                                @else
+                                    <span class="text-xs text-muted" style="opacity: 0.6;">Belum ada TT</span>
+                                @endif
                             </td>
                             <td>
                                 @if($attendance->status === 'validated')
@@ -835,6 +888,8 @@
                             $attendance->content_live_count * $scheme->content_live_rate +
                             \App\Models\BonusTier::getBonusForSales($attendance->sales_count);
                     }
+                    $key = $attendance->user_id . '_' . $attendance->attendance_date->toDateString();
+                    $tt = $tiktokTotals[$key] ?? null;
                 @endphp
                 <div class="attendance-card-mobile">
                     <!-- Top Row: Checkbox, Avatar, User Info, Status Badge -->
@@ -866,18 +921,55 @@
 
                     <!-- Meta Row: Date, Input Time, Duration -->
                     <div class="card-mobile-meta-row">
-                        <div class="card-mobile-meta-left">
+                        <div class="card-mobile-meta-left flex items-center gap-1">
                             <span style="font-weight: 600; color: var(--text-primary);">
                                 {{ $attendance->attendance_date->translatedFormat('d M Y') }}
                             </span>
+                            <span class="badge badge-secondary badge-xs" style="font-size: 0.65rem;">{{ $attendance->session_name ?? 'Sesi 1' }}</span>
                             @if($attendance->created_at)
                                 <span class="text-muted" style="font-size: 0.7rem;">
-                                    (input {{ $attendance->created_at->format('H:i') }})
+                                    ({{ $attendance->created_at->format('H:i') }})
                                 </span>
                             @endif
                         </div>
                         <div>
                             <span class="card-mobile-badge-duration">⏱ {{ $attendance->formatted_duration }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Discrepancy & Proof Badges Row -->
+                    <div class="flex items-center justify-between gap-2" style="font-size: 0.72rem; padding: 2px 0;">
+                        <div>
+                            @if($tt)
+                                @php
+                                    $diff = $attendance->live_duration_minutes - $tt['total_duration'];
+                                @endphp
+                                @if(abs($diff) <= 15)
+                                    <span class="badge badge-success badge-xs">✓ Sesuai TT</span>
+                                @elseif($diff > 15)
+                                    <span class="badge badge-danger badge-xs" style="background: #ef4444; color: #fff; font-weight: 600;">
+                                        ⚠️ Selisih +{{ round($diff / 60, 1) }}j
+                                    </span>
+                                @else
+                                    <span class="badge badge-info badge-xs" style="background: #3b82f6; color: #fff;">
+                                        ↑ TT +{{ round(abs($diff) / 60, 1) }}j
+                                    </span>
+                                @endif
+                            @else
+                                <span class="text-muted" style="opacity: 0.6;">Belum ada TT</span>
+                            @endif
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @if($attendance->proof_image)
+                                <span onclick="openImageModal('{{ $attendance->proof_image_url }}')" style="color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: underline;">
+                                    📸 Bukti
+                                </span>
+                            @endif
+                            @if($attendance->vt_link)
+                                <a href="{{ $attendance->vt_link }}" target="_blank" rel="noopener noreferrer" style="color: #6366f1; font-weight: 600;">
+                                    VT ↗
+                                </a>
+                            @endif
                         </div>
                     </div>
 
@@ -956,10 +1048,35 @@
             {{ $attendances->withQueryString()->links() }}
         </div>
     @endif
+
+    <!-- Image Modal Lightbox -->
+    <div id="imageModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;" onclick="closeImageModal()">
+        <div style="max-width: 90vw; max-height: 90vh; border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" onclick="event.stopPropagation()">
+            <div style="padding: 8px 12px; background: #1e293b; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; font-weight: 600;">Bukti Screenshot Host</span>
+                <button type="button" onclick="closeImageModal()" style="background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            <img id="modalImg" src="" alt="Bukti Live" style="display: block; max-width: 100%; max-height: 85vh; object-fit: contain;">
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
     <script>
+        function openImageModal(url) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImg');
+            img.src = url;
+            modal.style.display = 'flex';
+        }
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeImageModal();
+        });
+
         function toggleSelectAll(source) {
             const isMobile = window.innerWidth <= 768;
             const targetSelector = isMobile ? '.mobile-row-checkbox' : '.desktop-row-checkbox';

@@ -59,6 +59,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/performance/user/{user}', [AdminPerformanceController::class, 'userDetail'])->name('performance.user-detail');
 
     // Attendances
+    Route::get('attendances/matrix', [AdminAttendanceController::class, 'matrix'])->name('attendances.matrix');
     Route::resource('attendances', AdminAttendanceController::class);
     Route::post('attendances/{attendance}/validate', [AdminAttendanceController::class, 'validate_attendance'])->name('attendances.validate');
     Route::post('attendances/{attendance}/reject', [AdminAttendanceController::class, 'reject'])->name('attendances.reject');

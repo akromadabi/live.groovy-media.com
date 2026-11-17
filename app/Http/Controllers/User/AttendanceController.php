@@ -4,8 +4,10 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class AttendanceController extends Controller
@@ -40,7 +42,9 @@ class AttendanceController extends Controller
             $query->where('status', $request->status);
         }
 
-        $attendances = $query->orderByDesc('attendance_date')->paginate(31);
+        $attendances = $query->orderByDesc('attendance_date')
+            ->orderBy('session_name')
+            ->paginate(31);
 
         // Get salary scheme for calculation
         $scheme = $user->salaryScheme;
@@ -119,6 +123,17 @@ class AttendanceController extends Controller
         $targetMet = $monthlyHours >= $targetHours;
         $salesBonus = $monthlySales > 0 ? \App\Models\BonusTier::getBonusForSales($monthlySales) : 0;
 
+        // Gamification: Next Tier Calculation
+        $threshold = $scheme?->bonus_pcs_threshold ?: Setting::getValue('bonus_pcs_threshold', 20);
+        $threshold = max(1, (int) $threshold);
+        $bonusAmt = $scheme && $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : (float) Setting::getValue('bonus_amount', 10000);
+
+        $currentMultiplier = floor($monthlySales / $threshold);
+        $nextTierTarget = ($currentMultiplier + 1) * $threshold;
+        $remainingToNext = max(0, $nextTierTarget - $monthlySales);
+        $tierProgressPercent = min(100, round((($monthlySales % $threshold) / $threshold) * 100));
+        $nextBonusTotal = ($currentMultiplier + 1) * $bonusAmt;
+
         $totals = [
             'total_hours' => round($totalMinutes / 60, 1),
             'total_content_edit' => $totalContentEdit,
@@ -137,6 +152,13 @@ class AttendanceController extends Controller
             'target_met' => $targetMet,
             'monthly_sales' => $monthlySales,
             'sales_bonus' => $salesBonus,
+            'threshold' => $threshold,
+            'bonus_amount_per_tier' => $bonusAmt,
+            'current_multiplier' => $currentMultiplier,
+            'next_tier_target' => $nextTierTarget,
+            'remaining_to_next' => $remainingToNext,
+            'tier_progress_percent' => $tierProgressPercent,
+            'next_bonus_total' => $nextBonusTotal,
         ];
 
         // Pre-aggregate TikTok and Attendance daily totals for the paginated items to eliminate N+1 queries in view
@@ -166,7 +188,22 @@ class AttendanceController extends Controller
      */
     public function create()
     {
-        return view('user.attendances.create');
+        $settings = [
+            'proof_enabled' => Setting::getValue('attendance_proof_enabled', true),
+            'proof_required' => Setting::getValue('attendance_proof_required', false),
+            'vt_link_enabled' => Setting::getValue('attendance_vt_link_enabled', true),
+            'vt_link_required' => Setting::getValue('attendance_vt_link_required', false),
+            'deadline_enabled' => Setting::getValue('attendance_deadline_enabled', false),
+            'deadline_days' => (int) Setting::getValue('attendance_deadline_days', 1),
+            'deadline_time' => Setting::getValue('attendance_deadline_time', '23:59'),
+        ];
+
+        $minDate = null;
+        if ($settings['deadline_enabled']) {
+            $minDate = Carbon::today()->subDays($settings['deadline_days'])->toDateString();
+        }
+
+        return view('user.attendances.create', compact('settings', 'minDate'));
     }
 
     /**
@@ -174,36 +211,74 @@ class AttendanceController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $settings = [
+            'proof_enabled' => Setting::getValue('attendance_proof_enabled', true),
+            'proof_required' => Setting::getValue('attendance_proof_required', false),
+            'vt_link_enabled' => Setting::getValue('attendance_vt_link_enabled', true),
+            'vt_link_required' => Setting::getValue('attendance_vt_link_required', false),
+            'deadline_enabled' => Setting::getValue('attendance_deadline_enabled', false),
+            'deadline_days' => (int) Setting::getValue('attendance_deadline_days', 1),
+            'deadline_time' => Setting::getValue('attendance_deadline_time', '23:59'),
+        ];
+
+        // Check deadline locking
+        if ($settings['deadline_enabled']) {
+            $minDate = Carbon::today()->subDays($settings['deadline_days'])->toDateString();
+            if ($request->input('attendance_date') < $minDate) {
+                return back()->withInput()->with('error', "Batas pengisian absensi telah terlewat (Maksimal H+{$settings['deadline_days']}). Silakan hubungi admin untuk izin pengisian susulan.");
+            }
+        }
+
+        $rules = [
             'attendance_date' => 'required|date|before_or_equal:today',
+            'session_name' => 'required|string|max:50',
             'live_duration_hours' => 'required|numeric|min:0.5|max:24',
             'content_edit_count' => 'nullable|integer|min:0|max:10',
             'content_live_count' => 'nullable|integer|min:0|max:10',
             'sales_count' => 'required|integer|min:0',
             'notes' => 'nullable|string|max:500',
-        ]);
+        ];
+
+        if ($settings['proof_enabled']) {
+            $rules['proof_image'] = ($settings['proof_required'] ? 'required' : 'nullable') . '|image|mimes:jpeg,jpg,png,webp|max:10240';
+        }
+
+        if ($settings['vt_link_enabled']) {
+            $rules['vt_link'] = ($settings['vt_link_required'] ? 'required' : 'nullable') . '|url|max:500';
+        }
+
+        $validated = $request->validate($rules);
 
         // Convert decimal hours to minutes (e.g., 1.5 hours = 90 minutes)
         $totalMinutes = (int) ($validated['live_duration_hours'] * 60);
 
-        // Check if attendance already exists for this date
+        // Check if attendance already exists for this date and session
         $existing = Auth::user()->attendances()
             ->where('attendance_date', $validated['attendance_date'])
+            ->where('session_name', $validated['session_name'])
             ->first();
 
         if ($existing) {
-            return back()->with('error', 'Absensi untuk tanggal ini sudah ada. Silakan edit yang sudah ada.');
+            return back()->withInput()->with('error', "Absensi untuk {$validated['session_name']} pada tanggal ini sudah ada. Silakan pilih sesi lain (misal: Sesi 2) atau edit absensi yang sudah ada.");
+        }
+
+        $proofPath = null;
+        if ($request->hasFile('proof_image')) {
+            $proofPath = $request->file('proof_image')->store('attendance_proofs', 'public');
         }
 
         Attendance::create([
             'user_id' => Auth::id(),
             'attendance_date' => $validated['attendance_date'],
+            'session_name' => $validated['session_name'],
             'live_duration_minutes' => $totalMinutes,
-            'content_edit_count' => $validated['content_edit_count'],
-            'content_live_count' => $validated['content_live_count'],
+            'content_edit_count' => $validated['content_edit_count'] ?? 0,
+            'content_live_count' => $validated['content_live_count'] ?? 0,
             'sales_count' => $validated['sales_count'],
             'status' => 'pending',
-            'notes' => $validated['notes'],
+            'notes' => $validated['notes'] ?? null,
+            'proof_image' => $proofPath,
+            'vt_link' => $validated['vt_link'] ?? null,
         ]);
 
         return redirect()->route('user.attendances.index')
@@ -225,7 +300,21 @@ class AttendanceController extends Controller
             return back()->with('error', 'Hanya absensi dengan status pending yang dapat diedit.');
         }
 
-        return view('user.attendances.edit', compact('attendance'));
+        $settings = [
+            'proof_enabled' => Setting::getValue('attendance_proof_enabled', true),
+            'proof_required' => Setting::getValue('attendance_proof_required', false),
+            'vt_link_enabled' => Setting::getValue('attendance_vt_link_enabled', true),
+            'vt_link_required' => Setting::getValue('attendance_vt_link_required', false),
+            'deadline_enabled' => Setting::getValue('attendance_deadline_enabled', false),
+            'deadline_days' => (int) Setting::getValue('attendance_deadline_days', 1),
+        ];
+
+        $minDate = null;
+        if ($settings['deadline_enabled']) {
+            $minDate = Carbon::today()->subDays($settings['deadline_days'])->toDateString();
+        }
+
+        return view('user.attendances.edit', compact('attendance', 'settings', 'minDate'));
     }
 
     /**
@@ -243,26 +332,72 @@ class AttendanceController extends Controller
             return back()->with('error', 'Hanya absensi dengan status pending yang dapat diedit.');
         }
 
-        $validated = $request->validate([
+        $settings = [
+            'proof_enabled' => Setting::getValue('attendance_proof_enabled', true),
+            'proof_required' => Setting::getValue('attendance_proof_required', false),
+            'vt_link_enabled' => Setting::getValue('attendance_vt_link_enabled', true),
+            'vt_link_required' => Setting::getValue('attendance_vt_link_required', false),
+            'deadline_enabled' => Setting::getValue('attendance_deadline_enabled', false),
+            'deadline_days' => (int) Setting::getValue('attendance_deadline_days', 1),
+        ];
+
+        $rules = [
             'attendance_date' => 'required|date|before_or_equal:today',
+            'session_name' => 'required|string|max:50',
             'live_duration_hours' => 'required|numeric|min:0.5|max:24',
             'content_edit_count' => 'nullable|integer|min:0|max:10',
             'content_live_count' => 'nullable|integer|min:0|max:10',
             'sales_count' => 'required|integer|min:0',
             'notes' => 'nullable|string|max:500',
-        ]);
+        ];
 
-        // Convert decimal hours to minutes (e.g., 1.5 hours = 90 minutes)
+        if ($settings['proof_enabled']) {
+            $isProofRequired = $settings['proof_required'] && empty($attendance->proof_image);
+            $rules['proof_image'] = ($isProofRequired ? 'required' : 'nullable') . '|image|mimes:jpeg,jpg,png,webp|max:10240';
+        }
+
+        if ($settings['vt_link_enabled']) {
+            $rules['vt_link'] = ($settings['vt_link_required'] ? 'required' : 'nullable') . '|url|max:500';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Check if session conflicts with another entry
+        $existing = Auth::user()->attendances()
+            ->where('attendance_date', $validated['attendance_date'])
+            ->where('session_name', $validated['session_name'])
+            ->where('id', '!=', $attendance->id)
+            ->first();
+
+        if ($existing) {
+            return back()->withInput()->with('error', "Absensi untuk {$validated['session_name']} pada tanggal ini sudah ada.");
+        }
+
+        // Convert decimal hours to minutes
         $totalMinutes = (int) ($validated['live_duration_hours'] * 60);
 
-        $attendance->update([
+        $updateData = [
             'attendance_date' => $validated['attendance_date'],
+            'session_name' => $validated['session_name'],
             'live_duration_minutes' => $totalMinutes,
-            'content_edit_count' => $validated['content_edit_count'],
-            'content_live_count' => $validated['content_live_count'],
+            'content_edit_count' => $validated['content_edit_count'] ?? 0,
+            'content_live_count' => $validated['content_live_count'] ?? 0,
             'sales_count' => $validated['sales_count'],
-            'notes' => $validated['notes'],
-        ]);
+            'notes' => $validated['notes'] ?? null,
+        ];
+
+        if ($settings['vt_link_enabled']) {
+            $updateData['vt_link'] = $validated['vt_link'] ?? null;
+        }
+
+        if ($request->hasFile('proof_image')) {
+            if ($attendance->proof_image && Storage::disk('public')->exists($attendance->proof_image)) {
+                Storage::disk('public')->delete($attendance->proof_image);
+            }
+            $updateData['proof_image'] = $request->file('proof_image')->store('attendance_proofs', 'public');
+        }
+
+        $attendance->update($updateData);
 
         return redirect()->route('user.attendances.index')
             ->with('success', 'Absensi berhasil diperbarui.');
@@ -281,6 +416,10 @@ class AttendanceController extends Controller
         // Only allow deleting pending attendances
         if ($attendance->status !== 'pending') {
             return back()->with('error', 'Hanya absensi dengan status pending yang dapat dihapus.');
+        }
+
+        if ($attendance->proof_image && Storage::disk('public')->exists($attendance->proof_image)) {
+            Storage::disk('public')->delete($attendance->proof_image);
         }
 
         $attendance->delete();

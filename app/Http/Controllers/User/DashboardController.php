@@ -153,6 +153,29 @@ class DashboardController extends Controller
 
         $targetPercent = $monthlyTarget > 0 ? min(100, round(($monthlyHours / $monthlyTarget) * 100)) : 0;
 
+        // Gamification calculations for next bonus tier
+        $userThreshold = $scheme ? $scheme->bonus_pcs_threshold : \App\Models\Setting::getValue('bonus_pcs_threshold', 20);
+        $userThreshold = max(1, (int) ($userThreshold ?: 20));
+        $userBonusAmt = $scheme && $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : (float) \App\Models\Setting::getValue('bonus_amount', 10000);
+
+        $monthSales = $stats['this_month_sales'];
+        $currentMultiplier = floor($monthSales / $userThreshold);
+        $nextTierTarget = ($currentMultiplier + 1) * $userThreshold;
+        $remainingToNext = max(0, $nextTierTarget - $monthSales);
+        $tierProgressPercent = min(100, round((($monthSales % $userThreshold) / $userThreshold) * 100));
+        $nextBonusTotal = ($currentMultiplier + 1) * $userBonusAmt;
+
+        $bonusGamification = [
+            'threshold' => $userThreshold,
+            'bonus_per_tier' => $userBonusAmt,
+            'current_sales' => $monthSales,
+            'current_multiplier' => $currentMultiplier,
+            'next_target' => $nextTierTarget,
+            'remaining_to_next' => $remainingToNext,
+            'progress_percent' => $tierProgressPercent,
+            'next_bonus_total' => $nextBonusTotal,
+        ];
+
         return view('user.dashboard', compact(
             'stats',
             'recentAttendances',
@@ -168,7 +191,8 @@ class DashboardController extends Controller
             'monthlyHours',
             'monthlyBonus',
             'targetMet',
-            'targetPercent'
+            'targetPercent',
+            'bonusGamification'
         ));
     }
 

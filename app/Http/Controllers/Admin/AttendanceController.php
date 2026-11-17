@@ -203,7 +203,133 @@ class AttendanceController extends Controller
             ];
         }
 
-        return view('admin.attendances.index', compact('attendances', 'users', 'totals', 'bonusInfo'));
+        // Fetch TikTok report totals for the paginated items to calculate discrepancies
+        $userIds = $attendances->pluck('user_id')->unique()->values();
+        $dates = $attendances->pluck('attendance_date')->map(fn($d) => Carbon::parse($d)->toDateString())->unique()->values();
+        $tiktokTotals = [];
+        if ($userIds->isNotEmpty() && $dates->isNotEmpty()) {
+            $tiktokTotals = \App\Models\TiktokReportDetail::whereIn('user_id', $userIds)
+                ->whereIn('live_date', $dates)
+                ->groupBy('user_id', 'live_date')
+                ->selectRaw('user_id, live_date, SUM(duration_minutes) as total_duration')
+                ->get()
+                ->keyBy(fn($item) => $item->user_id . '_' . Carbon::parse($item->live_date)->toDateString())
+                ->toArray();
+        }
+
+        return view('admin.attendances.index', compact('attendances', 'users', 'totals', 'bonusInfo', 'tiktokTotals'));
+    }
+
+    /**
+     * Display attendance matrix calendar and monthly recap for all hosts
+     */
+    public function matrix(Request $request)
+    {
+        $year = (int) $request->input('year', now()->year);
+        $month = (int) $request->input('month', now()->month);
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+        $daysInMonth = $endDate->day;
+
+        // Active hosts
+        $users = User::where('role', 'user')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        // Attendances for the whole month
+        $attendances = Attendance::whereBetween('attendance_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->whereIn('user_id', $users->pluck('id'))
+            ->get();
+
+        // Group attendances by user_id and day of month
+        $matrixData = [];
+        $userSummaries = [];
+
+        foreach ($users as $user) {
+            $userAttendances = $attendances->where('user_id', $user->id);
+
+            $userMatrix = [];
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $dateStr = Carbon::createFromDate($year, $month, $d)->toDateString();
+                $dayAttendances = $userAttendances->filter(function($a) use ($dateStr) {
+                    return Carbon::parse($a->attendance_date)->toDateString() === $dateStr;
+                });
+
+                if ($dayAttendances->isNotEmpty()) {
+                    $totalMinutes = $dayAttendances->sum('live_duration_minutes');
+                    $totalSales = $dayAttendances->sum('sales_count');
+                    $hasValidated = $dayAttendances->contains('status', 'validated');
+                    $hasPending = $dayAttendances->contains('status', 'pending');
+                    $hasRejected = $dayAttendances->contains('status', 'rejected');
+
+                    $status = 'validated';
+                    if ($hasPending) $status = 'pending';
+                    elseif ($hasRejected && !$hasValidated) $status = 'rejected';
+
+                    $userMatrix[$d] = [
+                        'present' => true,
+                        'minutes' => $totalMinutes,
+                        'hours' => round($totalMinutes / 60, 1),
+                        'sales' => $totalSales,
+                        'status' => $status,
+                        'sessions_count' => $dayAttendances->count(),
+                    ];
+                } else {
+                    $userMatrix[$d] = [
+                        'present' => false,
+                        'minutes' => 0,
+                        'hours' => 0,
+                        'sales' => 0,
+                        'status' => 'absent',
+                        'sessions_count' => 0,
+                    ];
+                }
+            }
+            $matrixData[$user->id] = $userMatrix;
+
+            // User summary for the month
+            $presentDays = collect($userMatrix)->where('present', true)->count();
+            $totalMonthMinutes = $userAttendances->sum('live_duration_minutes');
+            $totalMonthHours = round($totalMonthMinutes / 60, 1);
+            $totalMonthSales = $userAttendances->sum('sales_count');
+            $avgDailyHours = $presentDays > 0 ? round($totalMonthHours / $presentDays, 1) : 0;
+
+            $userSummaries[$user->id] = [
+                'present_days' => $presentDays,
+                'total_hours' => $totalMonthHours,
+                'total_sales' => $totalMonthSales,
+                'avg_daily_hours' => $avgDailyHours,
+            ];
+        }
+
+        // Daily totals across all users
+        $dailyTotals = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $totalHoursDay = 0;
+            $totalUsersPresent = 0;
+            foreach ($users as $user) {
+                if (!empty($matrixData[$user->id][$d]['present'])) {
+                    $totalUsersPresent++;
+                    $totalHoursDay += $matrixData[$user->id][$d]['hours'];
+                }
+            }
+            $dailyTotals[$d] = [
+                'present_count' => $totalUsersPresent,
+                'total_hours' => round($totalHoursDay, 1),
+            ];
+        }
+
+        return view('admin.attendances.matrix', compact(
+            'users',
+            'year',
+            'month',
+            'daysInMonth',
+            'matrixData',
+            'userSummaries',
+            'dailyTotals'
+        ));
     }
 
     /**
@@ -223,25 +349,36 @@ class AttendanceController extends Controller
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'attendance_date' => 'required|date',
+            'session_name' => 'nullable|string|max:50',
             'live_duration_hours' => 'required|numeric|min:0.5|max:24',
             'content_edit_count' => 'nullable|integer|min:0|max:10',
             'content_live_count' => 'nullable|integer|min:0|max:10',
             'sales_count' => 'required|integer|min:0',
+            'vt_link' => 'nullable|url|max:500',
+            'proof_image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
             'notes' => 'nullable|string|max:1000',
         ]);
 
         // Convert decimal hours to minutes
         $totalMinutes = (int) ($validated['live_duration_hours'] * 60);
 
+        $proofPath = null;
+        if ($request->hasFile('proof_image')) {
+            $proofPath = $request->file('proof_image')->store('attendance_proofs', 'public');
+        }
+
         Attendance::create([
             'user_id' => $validated['user_id'],
             'attendance_date' => $validated['attendance_date'],
+            'session_name' => $validated['session_name'] ?? 'Sesi 1',
             'live_duration_minutes' => $totalMinutes,
-            'content_edit_count' => $validated['content_edit_count'],
-            'content_live_count' => $validated['content_live_count'],
+            'content_edit_count' => $validated['content_edit_count'] ?? 0,
+            'content_live_count' => $validated['content_live_count'] ?? 0,
             'sales_count' => $validated['sales_count'],
             'status' => 'validated',
             'notes' => $validated['notes'],
+            'proof_image' => $proofPath,
+            'vt_link' => $validated['vt_link'] ?? null,
         ]);
 
         return redirect()->route('admin.attendances.index')
@@ -265,27 +402,41 @@ class AttendanceController extends Controller
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'attendance_date' => 'required|date',
+            'session_name' => 'nullable|string|max:50',
             'live_duration_hours' => 'required|numeric|min:0.5|max:24',
             'content_edit_count' => 'nullable|integer|min:0|max:10',
             'content_live_count' => 'nullable|integer|min:0|max:10',
             'sales_count' => 'required|integer|min:0',
             'status' => 'required|in:pending,validated,rejected',
+            'vt_link' => 'nullable|url|max:500',
+            'proof_image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
             'notes' => 'nullable|string|max:1000',
         ]);
 
         // Convert decimal hours to minutes
         $totalMinutes = (int) ($validated['live_duration_hours'] * 60);
 
-        $attendance->update([
+        $updateData = [
             'user_id' => $validated['user_id'],
             'attendance_date' => $validated['attendance_date'],
+            'session_name' => $validated['session_name'] ?? 'Sesi 1',
             'live_duration_minutes' => $totalMinutes,
-            'content_edit_count' => $validated['content_edit_count'],
-            'content_live_count' => $validated['content_live_count'],
+            'content_edit_count' => $validated['content_edit_count'] ?? 0,
+            'content_live_count' => $validated['content_live_count'] ?? 0,
             'sales_count' => $validated['sales_count'],
             'status' => $validated['status'],
             'notes' => $validated['notes'],
-        ]);
+            'vt_link' => $validated['vt_link'] ?? null,
+        ];
+
+        if ($request->hasFile('proof_image')) {
+            if ($attendance->proof_image && \Illuminate\Support\Facades\Storage::disk('public')->exists($attendance->proof_image)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($attendance->proof_image);
+            }
+            $updateData['proof_image'] = $request->file('proof_image')->store('attendance_proofs', 'public');
+        }
+
+        $attendance->update($updateData);
 
         return redirect()->route('admin.attendances.index')
             ->with('success', 'Absensi berhasil diperbarui.');

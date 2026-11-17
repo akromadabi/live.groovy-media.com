@@ -21,6 +21,7 @@ echo "=================================================="
 
 # 1. Tarik pembaruan terbaru dari GitHub
 echo "🔄 [1/6] Mengambil update dari GitHub (git pull)..."
+git config --global --add safe.directory "$SCRIPT_DIR" 2>/dev/null || true
 git pull origin main
 
 # 2. Update dependensi PHP jika ada

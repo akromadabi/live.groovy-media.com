@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Top Performa Host')
 
@@ -642,7 +642,7 @@
                 <div style="font-size: 7.5pt; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em;">Periode Evaluasi</div>
                 <div style="font-size: 11.5pt; font-weight: 800; color: #ffffff; margin-top: 1px;">{{ $filterLabel }}</div>
                 <div style="font-size: 7.5pt; color: #e2e8f0; margin-top: 4px; display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
-                    <span style="background: rgba(16,185,129,0.22); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.35); padding: 2px 6px; border-radius: 999px; font-weight: 600;">{{ $status === 'validated' ? 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ Tervalidasi' : 'Semua Data' }}</span>
+                    <span style="background: rgba(16,185,129,0.22); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.35); padding: 2px 6px; border-radius: 999px; font-weight: 600;">Semua Data</span>
                     <span>&bull; {{ now()->translatedFormat('d M Y, H:i') }} WIB</span>
                 </div>
             </div>
@@ -817,12 +817,6 @@
                         <option value="last_7_days" {{ $period === 'last_7_days' ? 'selected' : '' }}>7 Hari Terakhir</option>
                     </select>
 
-                    <!-- Status Selector -->
-                    <select name="status" class="form-control form-select perf-select perf-select-status" onchange="this.form.submit()">
-                        <option value="validated" {{ $status === 'validated' ? 'selected' : '' }}>Tervalidasi</option>
-                        <option value="all" {{ $status === 'all' ? 'selected' : '' }}>Semua Status</option>
-                    </select>
-
                     <!-- Month / Year Selector -->
                     <select name="month" class="form-control form-select perf-select perf-select-month" onchange="this.form.submit()">
                         <option value="">Bulan</option>
@@ -841,7 +835,7 @@
                     </select>
                 </div>
 
-                @if($selectedMonth || $selectedYear || $status !== 'validated' || $period !== 'all')
+                @if($selectedMonth || $selectedYear || $period !== 'all')
                     <a href="{{ route('admin.performance.index') }}" class="btn btn-secondary btn-sm perf-btn-reset">
                         ✕ Reset
                     </a>

@@ -19,7 +19,7 @@ class PerformanceController extends Controller
         $period = $request->input('period');
         $selectedMonth = $request->input('month');
         $selectedYear = $request->input('year');
-        $status = $request->input('status', 'validated');
+        $status = $request->input('status', 'all');
         $category = $request->input('category', 'overall');
         $search = $request->input('search', '');
 
@@ -307,7 +307,7 @@ class PerformanceController extends Controller
     {
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $status = $request->input('status', 'validated');
+        $status = $request->input('status', 'all');
 
         $query = Attendance::where('user_id', $user->id);
 

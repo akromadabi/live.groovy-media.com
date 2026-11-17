@@ -438,6 +438,7 @@
                 <form action="{{ route('admin.settings.update-system') }}" method="POST">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="setting_group" value="whatsapp">
 
                     <div class="grid grid-2 gap-3 mb-3">
                         <div class="form-group mb-0">
@@ -550,6 +551,7 @@
                 <form action="{{ route('admin.settings.update-system') }}" method="POST">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="setting_group" value="app">
 
                     <div class="form-group mb-3">
                         <label for="app_name" class="form-label" style="font-size: 0.8rem;">Nama Aplikasi</label>
@@ -568,3 +570,744 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+<style>
+    /* ==========================================================
+       MODERN POLICY SETTINGS STYLING
+       ========================================================== */
+    .policy-main-card {
+        border-radius: 16px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+
+    .policy-header-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: rgba(99, 102, 241, 0.12);
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .policy-preview-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        height: 32px;
+        padding: 0 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1px solid rgba(99, 102, 241, 0.35);
+        color: #4f46e5;
+        background: rgba(99, 102, 241, 0.06);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .policy-preview-toggle-btn:hover,
+    .policy-preview-toggle-btn.active {
+        background: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
+    }
+    .policy-preview-toggle-btn.active .policy-indicator-dot {
+        background: #ffffff;
+    }
+    .policy-indicator-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #10b981;
+        display: inline-block;
+        animation: pulseDot 2s infinite;
+    }
+    @keyframes pulseDot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Policy Card Container */
+    .policy-card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.15rem 1.25rem;
+        background: var(--surface);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+    .policy-card:hover {
+        border-color: rgba(99, 102, 241, 0.45);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    }
+    .policy-card.is-disabled {
+        background: var(--bg-secondary);
+        opacity: 0.85;
+    }
+
+    /* Policy Icons */
+    .policy-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+    }
+    .policy-card:hover .policy-icon-box {
+        transform: scale(1.05);
+    }
+    .policy-icon-indigo {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.08));
+        color: #4f46e5;
+    }
+    .policy-icon-sky {
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(2, 132, 199, 0.08));
+        color: #0284c7;
+    }
+    .policy-icon-amber {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.08));
+        color: #d97706;
+    }
+
+    .policy-title {
+        font-weight: 700;
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        line-height: 1.3;
+    }
+    .policy-desc {
+        font-size: 0.77rem;
+        color: var(--text-secondary);
+        line-height: 1.45;
+        margin-top: 3px;
+        max-width: 620px;
+    }
+
+    /* Chips */
+    .policy-chip-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.15rem 0.5rem;
+        font-size: 0.68rem;
+        font-weight: 600;
+        border-radius: 9999px;
+        letter-spacing: 0.01em;
+    }
+    .chip-emerald {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+    }
+    .chip-sky {
+        background: rgba(14, 165, 233, 0.12);
+        color: #0284c7;
+    }
+    .chip-amber {
+        background: rgba(245, 158, 11, 0.12);
+        color: #d97706;
+    }
+    .chip-indigo {
+        background: rgba(99, 102, 241, 0.12);
+        color: #4f46e5;
+    }
+
+    /* iOS-Style Modern Toggle Switch */
+    .policy-switch {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        margin-bottom: 0;
+    }
+    .policy-switch input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        margin: 0;
+    }
+    .policy-switch-slider {
+        position: relative;
+        width: 46px;
+        height: 25px;
+        background-color: #cbd5e1;
+        border-radius: 25px;
+        transition: background-color 0.25s ease, box-shadow 0.25s ease;
+        flex-shrink: 0;
+        display: inline-block;
+    }
+    [data-theme="dark"] .policy-switch-slider {
+        background-color: #475569;
+    }
+    .policy-switch-slider::before {
+        content: '';
+        position: absolute;
+        width: 19px;
+        height: 19px;
+        left: 3px;
+        top: 3px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    .policy-switch input:checked + .policy-switch-slider::before {
+        transform: translateX(21px);
+    }
+    .policy-switch-indigo input:checked + .policy-switch-slider {
+        background-color: #4f46e5;
+    }
+    .policy-switch-sky input:checked + .policy-switch-slider {
+        background-color: #0284c7;
+    }
+    .policy-switch-amber input:checked + .policy-switch-slider {
+        background-color: #f59e0b;
+    }
+    .policy-switch input:focus-visible + .policy-switch-slider {
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Status Badges */
+    .policy-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.2rem 0.65rem;
+        border-radius: 9999px;
+        letter-spacing: 0.01em;
+        transition: all 0.2s ease;
+    }
+    .policy-badge-active {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+    }
+    .policy-badge-inactive {
+        background: rgba(148, 163, 184, 0.16);
+        color: var(--text-muted);
+    }
+    .policy-badge-required {
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    .policy-badge-optional {
+        background: rgba(99, 102, 241, 0.09);
+        color: #4f46e5;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    /* Sub-panels */
+    .policy-sub-panel {
+        margin-top: 0.9rem;
+        padding-top: 0.85rem;
+        border-top: 1px dashed var(--border);
+        transition: all 0.25s ease;
+    }
+    .policy-sub-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: block;
+    }
+    .policy-sub-desc {
+        font-size: 0.73rem;
+        color: var(--text-secondary);
+        margin-top: 1px;
+    }
+    .policy-disabled-notice {
+        margin-top: 0.75rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Preset Chip Buttons */
+    .policy-chip-btn {
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.74rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.18s ease;
+    }
+    .policy-chip-btn:hover {
+        border-color: #4f46e5;
+        color: #4f46e5;
+        background: rgba(99, 102, 241, 0.05);
+    }
+    .policy-chip-btn.active {
+        border-color: #4f46e5;
+        background: rgba(99, 102, 241, 0.12);
+        color: #4f46e5;
+        font-weight: 700;
+        box-shadow: 0 0 0 1px #4f46e5;
+    }
+
+    /* Mini Time Quick Buttons */
+    .policy-mini-time-btn {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 0.12rem 0.45rem;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .policy-mini-time-btn:hover {
+        border-color: #4f46e5;
+        color: #4f46e5;
+        background: rgba(99, 102, 241, 0.08);
+    }
+
+    /* Real-Time Simulation Card */
+    .policy-simulation-card {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(245, 158, 11, 0.06));
+        border: 1px solid rgba(99, 102, 241, 0.22);
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+    }
+    [data-theme="dark"] .policy-simulation-card {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+    .policy-sim-icon {
+        color: #4f46e5;
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+    .policy-sim-heading {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #4f46e5;
+        display: block;
+        margin-bottom: 2px;
+    }
+    .policy-sim-text {
+        font-size: 0.75rem;
+        color: var(--text-primary);
+        line-height: 1.5;
+    }
+
+    /* Live Host Preview Mockup Section */
+    .policy-preview-section {
+        background: var(--bg-secondary);
+        border: 1.5px dashed rgba(99, 102, 241, 0.4);
+        border-radius: 14px;
+        padding: 1.15rem;
+        animation: fadeInDown 0.25s ease;
+    }
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .policy-preview-box {
+        max-width: 480px;
+        margin: 0 auto;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+    }
+    .policy-preview-header {
+        background: var(--bg-primary);
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .policy-mobile-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: rgba(99, 102, 241, 0.12);
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .policy-mockup-body {
+        padding: 1rem;
+    }
+    .policy-mock-alert {
+        background: rgba(14, 165, 233, 0.1);
+        border: 1px solid rgba(14, 165, 233, 0.25);
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.72rem;
+        color: #0369a1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    [data-theme="dark"] .policy-mock-alert {
+        color: #38bdf8;
+    }
+    .policy-mock-input {
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.4rem 0.65rem;
+    }
+    .policy-mock-label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: block;
+        margin-bottom: 2px;
+    }
+    .policy-mock-field {
+        font-size: 0.76rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+    .policy-mock-field-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.65rem 0.75rem;
+        background: var(--surface);
+    }
+    .policy-mock-tag {
+        font-size: 0.65rem;
+        font-weight: 600;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+    }
+    .tag-required {
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+    }
+    .tag-optional {
+        background: rgba(148, 163, 184, 0.15);
+        color: var(--text-muted);
+    }
+    .policy-mock-dropzone {
+        border: 1.5px dashed var(--border);
+        border-radius: 6px;
+        padding: 0.65rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-primary);
+    }
+    .policy-mock-submit {
+        background: #4f46e5;
+        color: #ffffff;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-align: center;
+        padding: 0.5rem;
+        border-radius: 6px;
+        opacity: 0.9;
+    }
+
+    /* Save Button */
+    .policy-save-btn {
+        height: 38px;
+        padding: 0 1.35rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+        transition: all 0.2s ease;
+    }
+    .policy-save-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Proof Screenshot Elements
+    const proofEnabled = document.getElementById('attendance_proof_enabled');
+    const proofRequired = document.getElementById('attendance_proof_required');
+    const proofCard = document.getElementById('proof-policy-card');
+    const proofSubPanel = document.getElementById('proof-sub-panel');
+    const proofDisabledNotice = document.getElementById('proof-disabled-notice');
+    const proofStatusBadge = document.getElementById('proof-status-badge');
+    const proofRequiredBadge = document.getElementById('proof-required-badge');
+    const mockProofField = document.getElementById('mock-proof-field');
+    const mockProofBadge = document.getElementById('mock-proof-badge');
+
+    // 2. Video Link Elements
+    const vtEnabled = document.getElementById('attendance_vt_link_enabled');
+    const vtRequired = document.getElementById('attendance_vt_link_required');
+    const vtCard = document.getElementById('vt-policy-card');
+    const vtSubPanel = document.getElementById('vt-sub-panel');
+    const vtDisabledNotice = document.getElementById('vt-disabled-notice');
+    const vtStatusBadge = document.getElementById('vt-status-badge');
+    const vtRequiredBadge = document.getElementById('vt-required-badge');
+    const mockVtField = document.getElementById('mock-vt-field');
+    const mockVtBadge = document.getElementById('mock-vt-badge');
+
+    // 3. Deadline Locking Elements
+    const deadlineEnabled = document.getElementById('attendance_deadline_enabled');
+    const deadlineDays = document.getElementById('attendance_deadline_days');
+    const deadlineTime = document.getElementById('attendance_deadline_time');
+    const deadlineCard = document.getElementById('deadline-policy-card');
+    const deadlineSubPanel = document.getElementById('deadline-sub-panel');
+    const deadlineDisabledNotice = document.getElementById('deadline-disabled-notice');
+    const deadlineStatusBadge = document.getElementById('deadline-status-badge');
+    const deadlineSimText = document.getElementById('deadline-sim-text');
+    const mockDeadlineAlert = document.getElementById('mock-deadline-alert');
+    const mockDeadlineText = document.getElementById('mock-deadline-text');
+    const chipBtns = document.querySelectorAll('.policy-chip-btn');
+    const timeBtns = document.querySelectorAll('.policy-mini-time-btn');
+
+    // 4. Preview Drawer Toggle
+    const btnTogglePreview = document.getElementById('btn-toggle-preview');
+    const previewWrapper = document.getElementById('policy-preview-wrapper');
+
+    // ========================================================
+    // BUKTI SCREENSHOT LOGIC
+    // ========================================================
+    function updateProofUI() {
+        const isEnabled = proofEnabled.checked;
+        const isReq = proofRequired.checked;
+
+        if (isEnabled) {
+            proofCard.classList.remove('is-disabled');
+            proofStatusBadge.textContent = 'Tampil di Form';
+            proofStatusBadge.className = 'policy-badge policy-badge-active';
+            proofSubPanel.style.display = 'block';
+            proofDisabledNotice.style.display = 'none';
+            proofRequired.disabled = false;
+            if (mockProofField) mockProofField.style.display = 'block';
+        } else {
+            proofCard.classList.add('is-disabled');
+            proofStatusBadge.textContent = 'Disembunyikan';
+            proofStatusBadge.className = 'policy-badge policy-badge-inactive';
+            proofSubPanel.style.display = 'none';
+            proofDisabledNotice.style.display = 'flex';
+            proofRequired.disabled = true;
+            if (mockProofField) mockProofField.style.display = 'none';
+        }
+
+        if (isReq) {
+            proofRequiredBadge.textContent = '🔒 Wajib Diisi';
+            proofRequiredBadge.className = 'policy-badge policy-badge-required';
+            if (mockProofBadge) {
+                mockProofBadge.textContent = '* Wajib';
+                mockProofBadge.className = 'policy-mock-tag tag-required';
+            }
+        } else {
+            proofRequiredBadge.textContent = '⚪ Bersifat Opsional';
+            proofRequiredBadge.className = 'policy-badge policy-badge-optional';
+            if (mockProofBadge) {
+                mockProofBadge.textContent = '(Opsional)';
+                mockProofBadge.className = 'policy-mock-tag tag-optional';
+            }
+        }
+    }
+
+    if (proofEnabled) proofEnabled.addEventListener('change', updateProofUI);
+    if (proofRequired) proofRequired.addEventListener('change', updateProofUI);
+
+    // ========================================================
+    // LINK VT LOGIC
+    // ========================================================
+    function updateVtUI() {
+        const isEnabled = vtEnabled.checked;
+        const isReq = vtRequired.checked;
+
+        if (isEnabled) {
+            vtCard.classList.remove('is-disabled');
+            vtStatusBadge.textContent = 'Tampil di Form';
+            vtStatusBadge.className = 'policy-badge policy-badge-active';
+            vtSubPanel.style.display = 'block';
+            vtDisabledNotice.style.display = 'none';
+            vtRequired.disabled = false;
+            if (mockVtField) mockVtField.style.display = 'block';
+        } else {
+            vtCard.classList.add('is-disabled');
+            vtStatusBadge.textContent = 'Disembunyikan';
+            vtStatusBadge.className = 'policy-badge policy-badge-inactive';
+            vtSubPanel.style.display = 'none';
+            vtDisabledNotice.style.display = 'flex';
+            vtRequired.disabled = true;
+            if (mockVtField) mockVtField.style.display = 'none';
+        }
+
+        if (isReq) {
+            vtRequiredBadge.textContent = '🔒 Wajib Diisi';
+            vtRequiredBadge.className = 'policy-badge policy-badge-required';
+            if (mockVtBadge) {
+                mockVtBadge.textContent = '* Wajib';
+                mockVtBadge.className = 'policy-mock-tag tag-required';
+            }
+        } else {
+            vtRequiredBadge.textContent = '⚪ Bersifat Opsional';
+            vtRequiredBadge.className = 'policy-badge policy-badge-optional';
+            if (mockVtBadge) {
+                mockVtBadge.textContent = '(Opsional)';
+                mockVtBadge.className = 'policy-mock-tag tag-optional';
+            }
+        }
+    }
+
+    if (vtEnabled) vtEnabled.addEventListener('change', updateVtUI);
+    if (vtRequired) vtRequired.addEventListener('change', updateVtUI);
+
+    // ========================================================
+    // DEADLINE LOCKING LOGIC & SIMULATION
+    // ========================================================
+    function updateDeadlineUI() {
+        const isEnabled = deadlineEnabled.checked;
+        const days = parseInt(deadlineDays.value, 10);
+        const time = deadlineTime.value || '23:59';
+
+        if (isEnabled) {
+            deadlineCard.classList.remove('is-disabled');
+            deadlineStatusBadge.textContent = 'Batas Waktu Aktif';
+            deadlineStatusBadge.className = 'policy-badge policy-badge-active';
+            deadlineSubPanel.style.display = 'block';
+            deadlineDisabledNotice.style.display = 'none';
+            if (mockDeadlineAlert) mockDeadlineAlert.style.display = 'flex';
+        } else {
+            deadlineCard.classList.add('is-disabled');
+            deadlineStatusBadge.textContent = 'Pengisian Bebas';
+            deadlineStatusBadge.className = 'policy-badge policy-badge-inactive';
+            deadlineSubPanel.style.display = 'none';
+            deadlineDisabledNotice.style.display = 'flex';
+            if (mockDeadlineAlert) mockDeadlineAlert.style.display = 'none';
+        }
+
+        // Highlight chip matching current days
+        chipBtns.forEach(btn => {
+            if (parseInt(btn.getAttribute('data-days'), 10) === days) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Build human-friendly explanation
+        let explanation = '';
+        if (days === 0) {
+            explanation = `Host <strong>hanya dapat mengisi absensi pada hari yang sama</strong> dengan tanggal live stream (cut-off pukul <strong>${time} WIB</strong>). Tanggal kemarin dan seterusnya langsung terkunci.`;
+            if (mockDeadlineText) {
+                mockDeadlineText.innerHTML = `Batas pengisian: <strong>Hanya hari H live</strong> (cut-off ${time} WIB).`;
+            }
+        } else if (days === 1) {
+            explanation = `Jika live streaming berlangsung hari <strong>Senin</strong>, host memiliki waktu hingga hari <strong>Selasa pukul ${time} WIB</strong> untuk submit absensi. Lewat dari jam ini, form tanggal Senin terkunci otomatis.`;
+            if (mockDeadlineText) {
+                mockDeadlineText.innerHTML = `Batas input berlaku: <strong>Maksimal H+1</strong> (cut-off ${time} WIB).`;
+            }
+        } else if (days === 2) {
+            explanation = `Jika live streaming berlangsung hari <strong>Senin</strong>, host memiliki toleransi 2 hari hingga hari <strong>Rabu pukul ${time} WIB</strong> untuk submit absensi.`;
+            if (mockDeadlineText) {
+                mockDeadlineText.innerHTML = `Batas input berlaku: <strong>Maksimal H+2</strong> (cut-off ${time} WIB).`;
+            }
+        } else if (days === 3) {
+            explanation = `Jika live streaming berlangsung hari <strong>Senin</strong>, batas waktu pengisian absensi adalah hingga hari <strong>Kamis pukul ${time} WIB</strong>.`;
+            if (mockDeadlineText) {
+                mockDeadlineText.innerHTML = `Batas input berlaku: <strong>Maksimal H+3</strong> (cut-off ${time} WIB).`;
+            }
+        } else if (days === 7) {
+            explanation = `Host diberikan toleransi 1 minggu penuh. Jika live berlangsung hari <strong>Senin</strong>, batas akhir submit adalah <strong>Senin pekan berikutnya pukul ${time} WIB</strong>.`;
+            if (mockDeadlineText) {
+                mockDeadlineText.innerHTML = `Batas input berlaku: <strong>Maksimal 1 Minggu / 7 Hari</strong>.`;
+            }
+        } else {
+            explanation = `Host dapat mengisi absensi maksimal <strong>${days} hari mundur</strong> setelah tanggal live, hingga pukul <strong>${time} WIB</strong>.`;
+            if (mockDeadlineText) {
+                mockDeadlineText.innerHTML = `Batas input berlaku: <strong>Maksimal H+${days}</strong> (cut-off ${time} WIB).`;
+            }
+        }
+
+        if (deadlineSimText) {
+            deadlineSimText.innerHTML = explanation;
+        }
+    }
+
+    if (deadlineEnabled) deadlineEnabled.addEventListener('change', updateDeadlineUI);
+    if (deadlineDays) deadlineDays.addEventListener('change', updateDeadlineUI);
+    if (deadlineTime) {
+        deadlineTime.addEventListener('input', updateDeadlineUI);
+        deadlineTime.addEventListener('change', updateDeadlineUI);
+    }
+
+    // Chip Preset Clicks
+    chipBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const daysVal = this.getAttribute('data-days');
+            deadlineDays.value = daysVal;
+            updateDeadlineUI();
+        });
+    });
+
+    // Mini Time Preset Clicks
+    timeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const timeVal = this.getAttribute('data-time');
+            deadlineTime.value = timeVal;
+            updateDeadlineUI();
+        });
+    });
+
+    // ========================================================
+    // TOGGLE PREVIEW DRAWER
+    // ========================================================
+    if (btnTogglePreview && previewWrapper) {
+        btnTogglePreview.addEventListener('click', function() {
+            const isVisible = previewWrapper.style.display !== 'none';
+            if (isVisible) {
+                previewWrapper.style.display = 'none';
+                btnTogglePreview.classList.remove('active');
+            } else {
+                previewWrapper.style.display = 'block';
+                btnTogglePreview.classList.add('active');
+                previewWrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    }
+
+    // Initialize all states on page load
+    updateProofUI();
+    updateVtUI();
+    updateDeadlineUI();
+
+    // Feedback on Save button submit
+    const form = document.getElementById('attendance-policy-form');
+    const saveBtn = document.getElementById('btn-save-attendance-policy');
+    if (form && saveBtn) {
+        form.addEventListener('submit', function() {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = `
+                <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="16" height="16">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>Menyimpan Kebijakan...</span>
+            `;
+        });
+    }
+});
+</script>
+@endpush

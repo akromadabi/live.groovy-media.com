@@ -4,34 +4,34 @@
 
 @section('content')
     <!-- Filter Bar -->
-    <div class="card mb-4">
-        <div class="card-body" style="padding: 1rem;">
-            <form action="{{ route('admin.tiktok-reports.index') }}" method="GET" class="flex items-center gap-3 flex-wrap">
-                <select name="year" class="form-control form-select" style="width: auto; min-width: 100px;" onchange="this.form.submit()">
-                    @for($y = now()->year; $y >= 2020; $y--)
-                        <option value="{{ $y }}" {{ request('year', now()->year) == $y ? 'selected' : '' }}>{{ $y }}</option>
-                    @endfor
-                </select>
-                <select name="month" class="form-control form-select" style="width: auto; min-width: 130px;" onchange="this.form.submit()">
-                    @for($m = 1; $m <= 12; $m++)
-                        <option value="{{ $m }}" {{ request('month', now()->month) == $m ? 'selected' : '' }}>
-                            {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('F') }}
-                        </option>
-                    @endfor
-                </select>
-                <button type="button" data-modal="upload-modal" class="btn btn-success" style="margin-left: auto;">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    Upload Report
-                </button>
-            </form>
+    <div class="salary-control-bar mb-3">
+        <form action="{{ route('admin.tiktok-reports.index') }}" method="GET" class="salary-filter-form">
+            <select name="year" class="filter-select" onchange="this.form.submit()">
+                @for($y = now()->year; $y >= 2020; $y--)
+                    <option value="{{ $y }}" {{ request('year', now()->year) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                @endfor
+            </select>
+            <select name="month" class="filter-select" onchange="this.form.submit()">
+                @for($m = 1; $m <= 12; $m++)
+                    <option value="{{ $m }}" {{ request('month', now()->month) == $m ? 'selected' : '' }}>
+                        {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('F') }}
+                    </option>
+                @endfor
+            </select>
+        </form>
+        <div class="salary-btn-group">
+            <button type="button" data-modal="upload-modal" class="btn btn-success btn-sm salary-action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Upload Report
+            </button>
         </div>
     </div>
 
     <!-- Summary Stats -->
-    <div class="stats-grid-mobile mb-4">
+    <div class="stats-grid-mobile mb-3" style="grid-template-columns: repeat(3, 1fr);">
         <div class="stat-card-compact">
             <div class="stat-icon-sm primary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,9 +39,9 @@
                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
             </div>
-            <div class="stat-info">
-                <div class="stat-value">{{ $dailyData->count() }}</div>
+            <div>
                 <div class="stat-label">Hari Tercatat</div>
+                <div class="stat-number">{{ $dailyData->count() }} hari</div>
             </div>
         </div>
         <div class="stat-card-compact">
@@ -51,9 +51,9 @@
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            <div class="stat-info">
-                <div class="stat-value">{{ number_format($totalAbsenHours, 1) }} jam</div>
+            <div>
                 <div class="stat-label">Total Absen</div>
+                <div class="stat-number">{{ number_format($totalAbsenHours, 1) }} jam</div>
             </div>
         </div>
         <div class="stat-card-compact">
@@ -63,9 +63,9 @@
                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
             </div>
-            <div class="stat-info">
-                <div class="stat-value">{{ number_format($totalTiktokHours, 1) }} jam</div>
+            <div>
                 <div class="stat-label">Total TikTok</div>
+                <div class="stat-number">{{ number_format($totalTiktokHours, 1) }} jam</div>
             </div>
         </div>
     </div>

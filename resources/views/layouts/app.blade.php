@@ -17,10 +17,10 @@
     <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ file_exists(public_path('css/app.css')) ? filemtime(public_path('css/app.css')) : '1.0' }}">
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('js/chart.min.js') }}" defer></script>
 
     @stack('styles')
 </head>
@@ -87,7 +87,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="{{ asset('js/app.js') }}"></script>
+    <script src="{{ asset('js/app.js') }}?v={{ file_exists(public_path('js/app.js')) ? filemtime(public_path('js/app.js')) : '1.0' }}"></script>
     <script>
         function confirmDelete(formId) {
             let message = 'Apakah Anda yakin ingin menghapus data ini?';
@@ -105,6 +105,8 @@
         }
     </script>
     @stack('scripts')
+    <!-- Instant Page Prefetching -->
+    <script src="{{ asset('js/instantpage.min.js') }}" type="module"></script>
 </body>
 
 </html>

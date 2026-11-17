@@ -37,13 +37,21 @@ class SalaryRecordController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Calculate totals for filtered query (before pagination)
+        // Optimized: Single aggregated query instead of 5 separate queries
+        $totalsRaw = (clone $query)->selectRaw("
+            COALESCE(SUM(amount), 0) as total_amount,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as total_pending,
+            COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as count_pending,
+            COALESCE(SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END), 0) as count_paid
+        ")->first();
+
         $totals = [
-            'total_amount' => (clone $query)->sum('amount'),
-            'total_pending' => (clone $query)->where('status', 'pending')->sum('amount'),
-            'total_paid' => (clone $query)->where('status', 'paid')->sum('amount'),
-            'count_pending' => (clone $query)->where('status', 'pending')->count(),
-            'count_paid' => (clone $query)->where('status', 'paid')->count(),
+            'total_amount' => (float) ($totalsRaw->total_amount ?? 0),
+            'total_pending' => (float) ($totalsRaw->total_pending ?? 0),
+            'total_paid' => (float) ($totalsRaw->total_paid ?? 0),
+            'count_pending' => (int) ($totalsRaw->count_pending ?? 0),
+            'count_paid' => (int) ($totalsRaw->count_paid ?? 0),
         ];
 
         $records = $query->orderByDesc('year')

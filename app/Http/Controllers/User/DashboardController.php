@@ -84,51 +84,34 @@ class DashboardController extends Controller
             ->orderBy('date')
             ->get();
 
-        // Get hours per user for all active users (for comparison chart)
-        $hoursPerUserQuery = User::where('role', 'user')
-            ->where('is_active', true);
-
-        if ($chartStartDate && $chartEndDate) {
-            $hoursPerUserQuery->with([
-                'attendances' => function ($query) use ($chartStartDate, $chartEndDate) {
-                    $query->whereBetween('attendance_date', [$chartStartDate, $chartEndDate]);
+        // Optimized: Calculate hours & sales per user in a single aggregated query
+        $userMetrics = User::where('role', 'user')
+            ->where('is_active', true)
+            ->leftJoin('attendances', function ($join) use ($chartStartDate, $chartEndDate) {
+                $join->on('users.id', '=', 'attendances.user_id');
+                if ($chartStartDate && $chartEndDate) {
+                    $join->whereBetween('attendances.attendance_date', [$chartStartDate, $chartEndDate]);
                 }
-            ]);
-        } else {
-            $hoursPerUserQuery->with('attendances');
-        }
+            })
+            ->selectRaw('users.name, COALESCE(SUM(attendances.live_duration_minutes), 0) as total_minutes, COALESCE(SUM(attendances.sales_count), 0) as total_sales')
+            ->groupBy('users.id', 'users.name')
+            ->get();
 
-        $hoursPerUser = $hoursPerUserQuery->get()
-            ->map(function ($u) {
-                $totalMinutes = $u->attendances->sum('live_duration_minutes');
+        $hoursPerUser = $userMetrics
+            ->map(function ($row) {
                 return [
-                    'name' => $u->name,
-                    'hours' => round($totalMinutes / 60, 1),
+                    'name' => $row->name,
+                    'hours' => round(((int) $row->total_minutes) / 60, 1),
                 ];
             })
             ->sortByDesc('hours')
             ->values();
 
-        // Get sales per user for all active users
-        $salesPerUserQuery = User::where('role', 'user')
-            ->where('is_active', true);
-
-        if ($chartStartDate && $chartEndDate) {
-            $salesPerUserQuery->with([
-                'attendances' => function ($query) use ($chartStartDate, $chartEndDate) {
-                    $query->whereBetween('attendance_date', [$chartStartDate, $chartEndDate]);
-                }
-            ]);
-        } else {
-            $salesPerUserQuery->with('attendances');
-        }
-
-        $salesPerUser = $salesPerUserQuery->get()
-            ->map(function ($u) {
-                $totalSales = $u->attendances->sum('sales_count');
+        $salesPerUser = $userMetrics
+            ->map(function ($row) {
                 return [
-                    'name' => $u->name,
-                    'sales' => $totalSales,
+                    'name' => $row->name,
+                    'sales' => (int) $row->total_sales,
                 ];
             })
             ->sortByDesc('sales')

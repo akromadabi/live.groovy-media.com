@@ -88,18 +88,21 @@ class AttendanceController extends Controller
             $totalsQuery->where('status', $request->status);
         }
 
-        $totalMinutes = (clone $totalsQuery)->sum('live_duration_minutes');
-        $totalContentEdit = (clone $totalsQuery)->sum('content_edit_count');
-        $totalContentLive = (clone $totalsQuery)->sum('content_live_count');
-        $totalSales = (clone $totalsQuery)->sum('sales_count');
-        $totalLive = (clone $totalsQuery)->count();
+        // Optimized: Single aggregated query instead of 5 separate queries
+        $stats = $totalsQuery->selectRaw('
+            COALESCE(SUM(live_duration_minutes), 0) as total_minutes,
+            COALESCE(SUM(content_edit_count), 0) as total_content_edit,
+            COALESCE(SUM(content_live_count), 0) as total_content_live,
+            COALESCE(SUM(sales_count), 0) as total_sales,
+            COUNT(*) as total_live
+        ')->first();
 
         $totals = [
-            'total_hours' => round($totalMinutes / 60, 1),
-            'total_content_edit' => $totalContentEdit,
-            'total_content_live' => $totalContentLive,
-            'total_sales' => $totalSales,
-            'total_live' => $totalLive,
+            'total_hours' => round(($stats->total_minutes ?? 0) / 60, 1),
+            'total_content_edit' => (int) ($stats->total_content_edit ?? 0),
+            'total_content_live' => (int) ($stats->total_content_live ?? 0),
+            'total_sales' => (int) ($stats->total_sales ?? 0),
+            'total_live' => (int) ($stats->total_live ?? 0),
         ];
 
         // Calculate bonus info if specific user selected

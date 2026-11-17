@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\TiktokReportController as AdminTiktokReportContro
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\BonusTierController as AdminBonusTierController;
+use App\Http\Controllers\Admin\PerformanceController as AdminPerformanceController;
 use App\Http\Controllers\User\DashboardController as UserDashboardController;
 use App\Http\Controllers\User\AttendanceController as UserAttendanceController;
 use App\Http\Controllers\User\SettingsController as UserSettingsController;
@@ -50,6 +51,12 @@ Route::get('/admin', function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+    // Top Performance
+    Route::get('/performance', [AdminPerformanceController::class, 'index'])->name('performance.index');
+    Route::get('/performance/export', [AdminPerformanceController::class, 'export'])->name('performance.export');
+    Route::get('/performance/print', [AdminPerformanceController::class, 'printReport'])->name('performance.print');
+    Route::get('/performance/user/{user}', [AdminPerformanceController::class, 'userDetail'])->name('performance.user-detail');
 
     // Attendances
     Route::resource('attendances', AdminAttendanceController::class);

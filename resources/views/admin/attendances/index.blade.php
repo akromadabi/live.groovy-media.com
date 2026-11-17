@@ -43,65 +43,401 @@
         .sortable-link:hover {
             color: var(--primary);
         }
+
+        /* Top Control Bar */
+        .attendance-control-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg, 10px);
+            padding: 0.5rem 0.875rem;
+            margin-bottom: 0.625rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .attendance-filter-form {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .attendance-filter-form .filter-select {
+            height: 32px;
+            font-size: 0.8rem;
+            padding: 0.2rem 1.8rem 0.2rem 0.6rem;
+            width: auto;
+            border-radius: 6px;
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .attendance-filter-form .filter-user { min-width: 130px; }
+        .attendance-filter-form .filter-year { min-width: 85px; }
+        .attendance-filter-form .filter-month { min-width: 105px; }
+        .attendance-filter-form .filter-term { min-width: 110px; }
+        .attendance-filter-form .filter-status { min-width: 115px; }
+
+        .attendance-btn-reset {
+            height: 32px;
+            padding: 0.2rem 0.65rem;
+            font-size: 0.78rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .attendance-action-group {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .attendance-action-btn {
+            height: 32px;
+            padding: 0.25rem 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border-radius: 6px;
+        }
+
+        /* 6-Card Stats Grid Desktop */
+        .attendance-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .attendance-stats-grid .stat-card-compact {
+            padding: 0.45rem 0.6rem;
+            min-height: 48px;
+            border-radius: var(--radius-lg, 10px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .attendance-stats-grid .stat-number {
+            font-size: 0.95rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Mobile View Cards */
+        .attendance-mobile-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .mobile-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .mobile-select-all-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 0;
+            user-select: none;
+            color: var(--text-primary);
+        }
+
+        .attendance-card-mobile {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.65rem 0.75rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            transition: border-color var(--transition);
+        }
+
+        .attendance-card-mobile:hover {
+            border-color: var(--primary);
+        }
+
+        .card-mobile-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .card-mobile-user {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .card-mobile-sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.2;
+        }
+
+        .card-mobile-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            padding-top: 0.3rem;
+            border-top: 1px dashed var(--border);
+        }
+
+        .card-mobile-meta-left {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .card-mobile-badge-duration {
+            font-weight: 700;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            padding: 0.15rem 0.4rem;
+            border-radius: 5px;
+            font-size: 0.72rem;
+            white-space: nowrap;
+        }
+
+        .card-mobile-stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            gap: 0.35rem;
+            background: var(--bg-secondary);
+            padding: 0.4rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        .card-stat-box {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .card-stat-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            line-height: 1.1;
+        }
+
+        .card-stat-val {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-mobile-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding-top: 0.35rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .card-mobile-actions .btn {
+            flex: 1;
+            height: 28px;
+            padding: 0 0.35rem;
+            font-size: 0.72rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .card-mobile-actions .btn svg {
+            width: 12px;
+            height: 12px;
+            flex-shrink: 0;
+        }
+
+        /* Responsive Breakpoint (<= 768px) */
+        @media (max-width: 768px) {
+            .attendance-control-bar {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0.55rem;
+                gap: 0.45rem;
+            }
+
+            .attendance-action-group {
+                width: 100%;
+                order: -1;
+            }
+
+            .attendance-action-btn {
+                width: 100%;
+                height: 36px;
+                justify-content: center;
+                font-size: 0.8125rem;
+            }
+
+            .attendance-filter-form {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.35rem;
+                width: 100%;
+            }
+
+            .attendance-filter-form .filter-select {
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                height: 33px;
+                font-size: 0.75rem;
+                padding: 0.15rem 1.6rem 0.15rem 0.45rem;
+            }
+
+            .attendance-filter-form .filter-user {
+                grid-column: 1 / -1;
+            }
+
+            .attendance-filter-form .attendance-btn-reset {
+                grid-column: 1 / -1;
+                width: 100%;
+                justify-content: center;
+                height: 30px;
+                font-size: 0.75rem;
+            }
+
+            /* 2-Column Stats Grid on Mobile */
+            .attendance-stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.35rem !important;
+                margin-bottom: 0.5rem;
+            }
+
+            .attendance-stats-grid .stat-card-compact {
+                padding: 0.35rem 0.45rem;
+                min-height: 44px;
+                gap: 0.4rem;
+            }
+
+            .attendance-stats-grid .stat-icon-sm {
+                width: 30px;
+                height: 30px;
+                flex-shrink: 0;
+            }
+
+            .attendance-stats-grid .stat-label {
+                font-size: 0.62rem !important;
+                line-height: 1.1;
+            }
+
+            .attendance-stats-grid .stat-number {
+                font-size: 0.82rem !important;
+                line-height: 1.15;
+                margin-top: 1px;
+            }
+
+            /* Term Salary Grid on Mobile */
+            .term-salary-grid {
+                gap: 0.35rem !important;
+            }
+            .term-card {
+                padding: 0.65rem 0.5rem !important;
+            }
+            .term-header {
+                margin-bottom: 0.4rem !important;
+            }
+        }
     </style>
 @endpush
 
 @section('content')
-    <!-- Filter Bar -->
-    <div class="card mb-6">
-        <div class="card-body">
-            <form action="{{ route('admin.attendances.index') }}" method="GET" class="filter-bar-grid"
-                style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                    <select name="user_id" class="form-control form-select" onchange="this.form.submit()">
-                        <option value="">-- Pilih User --</option>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                                {{ $user->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <select name="year" class="form-control form-select" onchange="this.form.submit()">
-                        <option value="">-- Pilih Tahun --</option>
-                        @for($y = now()->year; $y >= 2020; $y--)
-                            <option value="{{ $y }}" {{ request('year', now()->year) == $y ? 'selected' : '' }}>{{ $y }}</option>
-                        @endfor
-                    </select>
-                </div>
-                <div class="form-group">
-                    <select name="month" class="form-control form-select" onchange="this.form.submit()">
-                        <option value="">-- Pilih Bulan --</option>
-                        @for($m = 1; $m <= 12; $m++)
-                            <option value="{{ $m }}" {{ request('month', now()->month) == $m ? 'selected' : '' }}>
-                                {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('F') }}
-                            </option>
-                        @endfor
-                    </select>
-                </div>
-                <div class="form-group">
-                    <select name="term" class="form-control form-select" onchange="this.form.submit()">
-                        <option value="" {{ request('term') == '' ? 'selected' : '' }}>-- Satu Bulan --</option>
-                        <option value="1" {{ request('term') == '1' ? 'selected' : '' }}>Termin 1 (1-15)</option>
-                        <option value="2" {{ request('term') == '2' ? 'selected' : '' }}>Termin 2 (16-Akhir)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <select name="status" class="form-control form-select" onchange="this.form.submit()">
-                        <option value="">-- Semua Status --</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="validated" {{ request('status') == 'validated' ? 'selected' : '' }}>Tervalidasi
-                        </option>
-                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                    </select>
-                </div>
-            </form>
+    <!-- Unified Top Control Bar (Filter Left + Action Right) -->
+    <div class="attendance-control-bar">
+        <form action="{{ route('admin.attendances.index') }}" method="GET" class="attendance-filter-form">
+            <select name="user_id" class="form-control form-select filter-select filter-user" onchange="this.form.submit()">
+                <option value="">Semua User</option>
+                @foreach($users as $user)
+                    <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                @endforeach
+            </select>
+            <select name="year" class="form-control form-select filter-select filter-year" onchange="this.form.submit()">
+                @for($y = now()->year; $y >= 2020; $y--)
+                    <option value="{{ $y }}" {{ request('year', now()->year) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                @endfor
+            </select>
+            <select name="month" class="form-control form-select filter-select filter-month" onchange="this.form.submit()">
+                @for($m = 1; $m <= 12; $m++)
+                    <option value="{{ $m }}" {{ request('month', now()->month) == $m ? 'selected' : '' }}>
+                        {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('F') }}
+                    </option>
+                @endfor
+            </select>
+            <select name="term" class="form-control form-select filter-select filter-term" onchange="this.form.submit()">
+                <option value="" {{ request('term') == '' ? 'selected' : '' }}>Semua Termin</option>
+                <option value="1" {{ request('term') == '1' ? 'selected' : '' }}>T1 (1-15)</option>
+                <option value="2" {{ request('term') == '2' ? 'selected' : '' }}>T2 (16-Akhir)</option>
+            </select>
+            <select name="status" class="form-control form-select filter-select filter-status" onchange="this.form.submit()">
+                <option value="">Semua Status</option>
+                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                <option value="validated" {{ request('status') == 'validated' ? 'selected' : '' }}>Tervalidasi</option>
+                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
+            </select>
+            @if(request()->hasAny(['user_id', 'term', 'status']))
+                <a href="{{ route('admin.attendances.index') }}" class="btn btn-secondary btn-sm attendance-btn-reset">
+                    ✕ Reset
+                </a>
+            @endif
+        </form>
+        <div class="attendance-action-group">
+            <a href="{{ route('admin.attendances.create') }}" class="btn btn-primary attendance-action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Tambah Absensi
+            </a>
         </div>
     </div>
 
-    <!-- Stats Grid - Mobile Optimized (6 boxes matches user dashboard layout) -->
-    <div class="stats-grid-mobile mb-4">
+    <!-- Unified 6-Card Stats Grid -->
+    <div class="attendance-stats-grid">
         <div class="stat-card-compact">
             <div class="stat-icon-sm primary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -109,8 +445,8 @@
                         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
             </div>
-            <div>
-                <div class="stat-label">Total Live</div>
+            <div style="min-width: 0; flex: 1;">
+                <div class="stat-label" style="font-size: 0.68rem;">Total Live</div>
                 <div class="stat-number">{{ number_format($totals['total_live']) }}</div>
             </div>
         </div>
@@ -121,9 +457,9 @@
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            <div>
-                <div class="stat-label">Total Jam</div>
-                <div class="stat-number">{{ number_format($totals['total_hours'], 1) }} jam</div>
+            <div style="min-width: 0; flex: 1;">
+                <div class="stat-label" style="font-size: 0.68rem;">Total Jam</div>
+                <div class="stat-number">{{ number_format($totals['total_hours'], 1) }}j</div>
             </div>
         </div>
         <div class="stat-card-compact">
@@ -133,8 +469,8 @@
                         d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
             </div>
-            <div>
-                <div class="stat-label">Penjualan</div>
+            <div style="min-width: 0; flex: 1;">
+                <div class="stat-label" style="font-size: 0.68rem;">Penjualan</div>
                 <div class="stat-number">{{ number_format($totals['total_sales']) }}</div>
             </div>
         </div>
@@ -145,8 +481,8 @@
                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            <div>
-                <div class="stat-label">Gaji</div>
+            <div style="min-width: 0; flex: 1;">
+                <div class="stat-label" style="font-size: 0.68rem;">Gaji</div>
                 <div class="stat-number">
                     @if($bonusInfo)
                         Rp {{ number_format(($bonusInfo['total_salary'] ?? 0) + ($bonusInfo['target_met'] ? $bonusInfo['sales_bonus'] : 0), 0, ',', '.') }}
@@ -156,10 +492,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Content Stats - berjajar seperti box atas -->
-    <div class="stats-grid-mobile mb-4" style="grid-template-columns: repeat(2, 1fr);">
         <div class="stat-card-compact">
             <div class="stat-icon-sm primary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -167,8 +499,8 @@
                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
             </div>
-            <div>
-                <div class="stat-label">Konten Edit</div>
+            <div style="min-width: 0; flex: 1;">
+                <div class="stat-label" style="font-size: 0.68rem;">Konten Edit</div>
                 <div class="stat-number">{{ number_format($totals['total_content_edit']) }}</div>
             </div>
         </div>
@@ -179,8 +511,8 @@
                         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
             </div>
-            <div>
-                <div class="stat-label">Konten Live</div>
+            <div style="min-width: 0; flex: 1;">
+                <div class="stat-label" style="font-size: 0.68rem;">Konten Live</div>
                 <div class="stat-number">{{ number_format($totals['total_content_live']) }}</div>
             </div>
         </div>
@@ -188,9 +520,9 @@
 
     <!-- Salary Summary (only shown when specific user is selected) -->
     @if($bonusInfo)
-        <div class="salary-summary-container mb-6">
+        <div class="salary-summary-container mb-4">
             <!-- T1/T2 Salary Grid -->
-            <div class="term-salary-grid mb-4">
+            <div class="term-salary-grid mb-3">
                 <div class="term-card">
                     <div class="term-header">
                         <span class="term-badge t1">T1</span>
@@ -198,8 +530,7 @@
                     </div>
                     <div class="term-body">
                         <div class="term-hours">{{ $bonusInfo['termData']['t1']['hours'] }} <small>jam</small></div>
-                        <div class="term-salary">Rp {{ number_format($bonusInfo['termData']['t1']['salary'], 0, ',', '.') }}
-                        </div>
+                        <div class="term-salary">Rp {{ number_format($bonusInfo['termData']['t1']['salary'], 0, ',', '.') }}</div>
                     </div>
                 </div>
                 <div class="term-card">
@@ -209,14 +540,13 @@
                     </div>
                     <div class="term-body">
                         <div class="term-hours">{{ $bonusInfo['termData']['t2']['hours'] }} <small>jam</small></div>
-                        <div class="term-salary">Rp {{ number_format($bonusInfo['termData']['t2']['salary'], 0, ',', '.') }}
-                        </div>
+                        <div class="term-salary">Rp {{ number_format($bonusInfo['termData']['t2']['salary'], 0, ',', '.') }}</div>
                     </div>
                 </div>
             </div>
 
             <!-- Target Achievement Card -->
-            <div class="card mb-4">
+            <div class="card mb-3">
                 <div class="card-body">
                     @php
                         $targetPercent = $bonusInfo['target_hours'] > 0 ? min(100, round(($bonusInfo['monthly_hours'] / $bonusInfo['target_hours']) * 100)) : 0;
@@ -225,16 +555,13 @@
                     @endphp
                     <div class="flex items-center justify-between mb-2">
                         <h3 style="font-size: 0.95rem; font-weight: 600; margin: 0;">🎯 Target {{ $bonusInfo['user_name'] }} - Bulan {{ \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->translatedFormat('F') }}</h3>
-                        <span
-                            style="font-size: 0.8rem; font-weight: 600; color: {{ $bonusInfo['target_met'] ? 'var(--success)' : 'var(--danger, #ef4444)' }};">
+                        <span style="font-size: 0.8rem; font-weight: 600; color: {{ $bonusInfo['target_met'] ? 'var(--success)' : 'var(--danger, #ef4444)' }};">
                             {{ $bonusInfo['monthly_hours'] }}/{{ $bonusInfo['target_hours'] }} jam
                         </span>
                     </div>
                     <!-- Progress Bar -->
-                    <div
-                        style="background: var(--border, #e5e7eb); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 8px;">
-                        <div
-                            style="background: {{ $bonusInfo['target_met'] ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #818cf8)' }}; height: 100%; border-radius: 10px; width: {{ $targetPercent }}%; transition: width 0.5s ease;">
+                    <div style="background: var(--border, #e5e7eb); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 8px;">
+                        <div style="background: {{ $bonusInfo['target_met'] ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #818cf8)' }}; height: 100%; border-radius: 10px; width: {{ $targetPercent }}%; transition: width 0.5s ease;">
                         </div>
                     </div>
                     <div class="flex items-center justify-between" style="font-size: 0.8rem;">
@@ -288,34 +615,21 @@
         </div>
     @endif
 
-    <!-- Actions -->
-    <div class="flex justify-end mb-4">
-        <a href="{{ route('admin.attendances.create') }}" class="btn btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Tambah Absensi
-        </a>
-    </div>
-
     <!-- Bulk Action Bar (hidden by default) -->
-    <div id="bulk-action-bar" class="card mb-4" style="display: none;">
+    <div id="bulk-action-bar" class="card mb-3" style="display: none;">
         <div class="card-body" style="padding: 0.75rem 1rem;">
-            <div class="flex items-center justify-between">
-                <span id="selected-count">0 item dipilih</span>
+            <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 0.5rem;">
+                <span id="selected-count" style="font-weight: 600; font-size: 0.85rem;">0 item dipilih</span>
                 <div class="flex gap-2">
                     <button type="button" onclick="bulkValidate()" class="btn btn-success btn-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            width="16" height="16">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
                         Validasi Masal
                     </button>
                     <button type="button" onclick="bulkDelete()" class="btn btn-danger btn-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            width="16" height="16">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                         Hapus Masal
                     </button>
@@ -325,22 +639,21 @@
     </div>
 
     <!-- Hidden Forms for Bulk Actions -->
-    <form id="bulk-validate-form" action="{{ route('admin.attendances.bulk-validate') }}" method="POST"
-        style="display:none;">
+    <form id="bulk-validate-form" action="{{ route('admin.attendances.bulk-validate') }}" method="POST" style="display:none;">
         @csrf
     </form>
     <form id="bulk-delete-form" action="{{ route('admin.attendances.bulk-delete') }}" method="POST" style="display:none;">
         @csrf
     </form>
 
-    <!-- Table -->
-    <div class="card">
+    <!-- Desktop View Table (Hidden on Mobile) -->
+    <div class="card hide-on-mobile mb-3">
         <div class="table-container">
             <table class="table">
                 <thead>
                     <tr>
                         <th style="width: 40px;">
-                            <input type="checkbox" id="select-all" onchange="toggleSelectAll()">
+                            <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
                         </th>
                         <th>
                             <a href="{{ sortUrl('user') }}" class="sortable-link">
@@ -362,28 +675,28 @@
                                 Durasi {!! sortIcon('live_duration_minutes') !!}
                             </a>
                         </th>
-                        <th class="hide-on-mobile">
+                        <th>
                             <a href="{{ sortUrl('content_edit_count') }}" class="sortable-link">
                                 Konten Edit {!! sortIcon('content_edit_count') !!}
                             </a>
                         </th>
-                        <th class="hide-on-mobile">
+                        <th>
                             <a href="{{ sortUrl('content_live_count') }}" class="sortable-link">
                                 Konten Live {!! sortIcon('content_live_count') !!}
                             </a>
                         </th>
-                        <th class="hide-on-mobile">
+                        <th>
                             <a href="{{ sortUrl('sales_count') }}" class="sortable-link">
                                 Penjualan {!! sortIcon('sales_count') !!}
                             </a>
                         </th>
-                        <th class="hide-on-mobile">Gaji</th>
-                        <th class="hide-on-mobile">
+                        <th>Gaji</th>
+                        <th>
                             <a href="{{ sortUrl('status') }}" class="sortable-link">
                                 Status {!! sortIcon('status') !!}
                             </a>
                         </th>
-                        <th>Aksi</th>
+                        <th style="text-align: center;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -402,7 +715,7 @@
                         @endphp
                         <tr>
                             <td>
-                                <input type="checkbox" class="row-checkbox" value="{{ $attendance->id }}"
+                                <input type="checkbox" class="desktop-row-checkbox" value="{{ $attendance->id }}"
                                     onchange="updateSelection()">
                             </td>
                             <td>
@@ -424,13 +737,13 @@
                                 </div>
                             </td>
                             <td>{{ $attendance->formatted_duration }}</td>
-                            <td class="hide-on-mobile">{{ $attendance->content_edit_count }}</td>
-                            <td class="hide-on-mobile">{{ $attendance->content_live_count }}</td>
-                            <td class="hide-on-mobile">{{ $attendance->sales_count }}</td>
-                            <td class="hide-on-mobile font-medium" style="color: var(--success);">
+                            <td>{{ $attendance->content_edit_count }}</td>
+                            <td>{{ $attendance->content_live_count }}</td>
+                            <td>{{ $attendance->sales_count }}</td>
+                            <td class="font-medium" style="color: var(--success);">
                                 Rp {{ number_format($salary, 0, ',', '.') }}
                             </td>
-                            <td class="hide-on-mobile">
+                            <td>
                                 @if($attendance->status === 'validated')
                                     <span class="badge badge-success">Tervalidasi</span>
                                 @elseif($attendance->status === 'pending')
@@ -440,7 +753,7 @@
                                 @endif
                             </td>
                             <td>
-                                <div class="action-btns">
+                                <div class="action-btns" style="justify-content: center;">
                                     @if($attendance->status === 'pending')
                                         <form action="{{ route('admin.attendances.validate', $attendance) }}" method="POST"
                                             style="display:inline;">
@@ -491,33 +804,183 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="text-center text-muted">Tidak ada data absensi.</td>
+                            <td colspan="11" class="text-center text-muted" style="padding: 2.5rem;">Tidak ada data absensi.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+
+    <!-- Mobile View Cards (Hidden on Desktop) -->
+    <div class="attendance-mobile-container hide-on-desktop mb-3">
+        @if($attendances->count() > 0)
+            <div class="mobile-list-header">
+                <label class="mobile-select-all-label">
+                    <input type="checkbox" id="select-all-mobile" onchange="toggleSelectAll(this)">
+                    <span>Pilih Semua ({{ $attendances->total() }})</span>
+                </label>
+                <span class="text-xs text-muted">{{ $attendances->firstItem() }}-{{ $attendances->lastItem() }} dari {{ $attendances->total() }}</span>
+            </div>
+
+            @foreach($attendances as $attendance)
+                @php
+                    $scheme = $attendance->user->salaryScheme;
+                    $salary = 0;
+                    if ($scheme) {
+                        $hours = $attendance->live_duration_minutes / 60;
+                        $salary =
+                            $hours * $scheme->hourly_rate +
+                            $attendance->content_edit_count * $scheme->content_edit_rate +
+                            $attendance->content_live_count * $scheme->content_live_rate +
+                            \App\Models\BonusTier::getBonusForSales($attendance->sales_count);
+                    }
+                @endphp
+                <div class="attendance-card-mobile">
+                    <!-- Top Row: Checkbox, Avatar, User Info, Status Badge -->
+                    <div class="card-mobile-top">
+                        <div class="flex items-center gap-2" style="min-width: 0;">
+                            <input type="checkbox" class="mobile-row-checkbox" value="{{ $attendance->id }}" onchange="updateSelection()">
+                            <div class="avatar avatar-sm" style="flex-shrink: 0; width: 32px; height: 32px; font-size: 0.8rem;">
+                                {{ substr($attendance->user->name, 0, 1) }}
+                            </div>
+                            <div style="min-width: 0;">
+                                <div class="card-mobile-user text-truncate" title="{{ $attendance->user->name }}">
+                                    {{ $attendance->user->name }}
+                                </div>
+                                <div class="card-mobile-sub text-truncate">
+                                    {{ $attendance->user->task }}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="flex-shrink: 0;">
+                            @if($attendance->status === 'validated')
+                                <span class="badge badge-success badge-sm">Tervalidasi</span>
+                            @elseif($attendance->status === 'pending')
+                                <span class="badge badge-warning badge-sm">Pending</span>
+                            @else
+                                <span class="badge badge-danger badge-sm">Ditolak</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Meta Row: Date, Input Time, Duration -->
+                    <div class="card-mobile-meta-row">
+                        <div class="card-mobile-meta-left">
+                            <span style="font-weight: 600; color: var(--text-primary);">
+                                {{ $attendance->attendance_date->translatedFormat('d M Y') }}
+                            </span>
+                            @if($attendance->created_at)
+                                <span class="text-muted" style="font-size: 0.7rem;">
+                                    (input {{ $attendance->created_at->format('H:i') }})
+                                </span>
+                            @endif
+                        </div>
+                        <div>
+                            <span class="card-mobile-badge-duration">⏱ {{ $attendance->formatted_duration }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Stats Row: Edit/Live, Penjualan, Gaji -->
+                    <div class="card-mobile-stats-row">
+                        <div class="card-stat-box">
+                            <span class="card-stat-lbl">Edit / Live</span>
+                            <span class="card-stat-val">{{ $attendance->content_edit_count }} / {{ $attendance->content_live_count }}</span>
+                        </div>
+                        <div class="card-stat-box">
+                            <span class="card-stat-lbl">Penjualan</span>
+                            <span class="card-stat-val">{{ $attendance->sales_count }} pcs</span>
+                        </div>
+                        <div class="card-stat-box" style="text-align: right;">
+                            <span class="card-stat-lbl">Gaji</span>
+                            <span class="card-stat-val" style="color: var(--success); font-weight: 700;">
+                                Rp {{ number_format($salary, 0, ',', '.') }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons Row -->
+                    <div class="card-mobile-actions">
+                        @if($attendance->status === 'pending')
+                            <form action="{{ route('admin.attendances.validate', $attendance) }}" method="POST" style="flex: 1; display: flex;">
+                                @csrf
+                                <button type="submit" class="btn btn-success btn-sm w-100" title="Validasi">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Validasi
+                                </button>
+                            </form>
+                            <form action="{{ route('admin.attendances.reject', $attendance) }}" method="POST" style="flex: 1; display: flex;">
+                                @csrf
+                                <button type="submit" class="btn btn-danger btn-sm w-100" title="Tolak">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Tolak
+                                </button>
+                            </form>
+                        @endif
+                        <a href="{{ route('admin.attendances.edit', $attendance) }}" class="btn btn-secondary btn-sm" style="flex: 1;" title="Edit">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit
+                        </a>
+                        <form action="{{ route('admin.attendances.destroy', $attendance) }}" method="POST" style="flex: 1; display: flex;" id="delete-mobile-{{ $attendance->id }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button" onclick="confirmDelete('delete-mobile-{{ $attendance->id }}')" class="btn btn-danger btn-sm w-100" title="Hapus">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Hapus
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            @endforeach
+        @else
+            <div class="card p-4 text-center text-muted" style="border-radius: 10px; margin-bottom: 0.75rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="36" height="36" style="opacity: 0.35; margin: 0 auto 0.5rem;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <div style="font-size: 0.85rem; font-weight: 500;">Tidak ada data absensi.</div>
+            </div>
+        @endif
+    </div>
+
+    <!-- Pagination for both Desktop and Mobile -->
     @if($attendances->hasPages())
-        <div class="card-footer">
+        <div class="card-footer" style="margin-top: 0.75rem; border-top: none; background: transparent; padding: 0.25rem 0;">
             {{ $attendances->withQueryString()->links() }}
         </div>
     @endif
-    </div>
 @endsection
 
 @push('scripts')
     <script>
-        function toggleSelectAll() {
-            const selectAll = document.getElementById('select-all');
-            const checkboxes = document.querySelectorAll('.row-checkbox');
-            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        function toggleSelectAll(source) {
+            const isMobile = window.innerWidth <= 768;
+            const targetSelector = isMobile ? '.mobile-row-checkbox' : '.desktop-row-checkbox';
+            const checkboxes = document.querySelectorAll(targetSelector);
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            
+            // Sync the other selectAll checkbox
+            const desktopSelectAll = document.getElementById('select-all');
+            const mobileSelectAll = document.getElementById('select-all-mobile');
+            if (desktopSelectAll) desktopSelectAll.checked = source.checked;
+            if (mobileSelectAll) mobileSelectAll.checked = source.checked;
+
             updateSelection();
         }
 
         function updateSelection() {
-            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-            const count = checkboxes.length;
+            const isMobile = window.innerWidth <= 768;
+            const selector = isMobile ? '.mobile-row-checkbox:checked' : '.desktop-row-checkbox:checked';
+            const checkboxes = document.querySelectorAll(selector);
+            const uniqueIds = Array.from(new Set(Array.from(checkboxes).map(cb => cb.value)));
+            const count = uniqueIds.length;
             const bulkBar = document.getElementById('bulk-action-bar');
             const countSpan = document.getElementById('selected-count');
 
@@ -530,8 +993,10 @@
         }
 
         function getSelectedIds() {
-            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-            return Array.from(checkboxes).map(cb => cb.value);
+            const isMobile = window.innerWidth <= 768;
+            const selector = isMobile ? '.mobile-row-checkbox:checked' : '.desktop-row-checkbox:checked';
+            const checkboxes = document.querySelectorAll(selector);
+            return Array.from(new Set(Array.from(checkboxes).map(cb => cb.value)));
         }
 
         function bulkValidate() {
@@ -540,6 +1005,7 @@
 
             if (confirm('Validasi ' + ids.length + ' absensi yang dipilih?')) {
                 const form = document.getElementById('bulk-validate-form');
+                form.innerHTML = '@csrf';
                 ids.forEach(id => {
                     const input = document.createElement('input');
                     input.type = 'hidden';
@@ -557,6 +1023,7 @@
 
             if (confirm('Hapus ' + ids.length + ' absensi yang dipilih? Tindakan ini tidak dapat dibatalkan!')) {
                 const form = document.getElementById('bulk-delete-form');
+                form.innerHTML = '@csrf';
                 ids.forEach(id => {
                     const input = document.createElement('input');
                     input.type = 'hidden';
@@ -567,43 +1034,6 @@
                 form.submit();
             }
         }
-
-        function toggleRowDetails(id) {
-            const detailRow = document.getElementById('detail-' + id);
-            if (detailRow.style.display === 'none') {
-                detailRow.style.display = 'table-row';
-            } else {
-                detailRow.style.display = 'none';
-            }
-        }
-
-        function toggleActionMenu(id) {
-            const menu = document.getElementById('action-menu-' + id);
-            const allMenus = document.querySelectorAll('.action-menu');
-
-            // Close all other menus
-            allMenus.forEach(m => {
-                if (m.id !== 'action-menu-' + id) {
-                    m.style.display = 'none';
-                }
-            });
-
-            // Toggle current menu
-            if (menu.style.display === 'none') {
-                menu.style.display = 'block';
-            } else {
-                menu.style.display = 'none';
-            }
-        }
-
-        // Close menus when clicking outside
-        document.addEventListener('click', function (event) {
-            if (!event.target.closest('.dropdown-action')) {
-                document.querySelectorAll('.action-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            }
-        });
 
         function confirmDelete(formId) {
             if (confirm('Hapus data absensi ini?')) {

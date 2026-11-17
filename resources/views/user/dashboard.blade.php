@@ -2,51 +2,239 @@
 
 @section('title', 'Dashboard')
 
+@push('styles')
+<style>
+    /* Premium Dashboard Period Bar */
+    .dashboard-period-bar {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg, 12px);
+        padding: 0.55rem 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 0.85rem;
+    }
+
+    .period-filter-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .period-badge-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        white-space: nowrap;
+        border: 1px solid var(--border);
+    }
+
+    .period-badge-label svg {
+        width: 14px;
+        height: 14px;
+        color: var(--primary);
+    }
+
+    .period-select-custom {
+        height: 34px !important;
+        font-size: 0.8125rem !important;
+        font-weight: 500 !important;
+        color: var(--text-primary) !important;
+        background-color: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 6px !important;
+        padding: 0 1.85rem 0 0.65rem !important;
+        cursor: pointer;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 0.5rem center !important;
+        background-size: 14px 14px !important;
+        transition: border-color var(--transition), box-shadow var(--transition);
+        width: auto !important;
+        min-width: 125px;
+    }
+
+    .period-select-custom:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+        outline: none;
+    }
+
+    .period-reset-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        height: 34px;
+        padding: 0 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all var(--transition);
+    }
+
+    .period-reset-btn:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+        background: rgba(239, 68, 68, 0.05);
+    }
+
+    .dashboard-action-group {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-left: auto;
+    }
+
+    .dashboard-action-btn {
+        height: 34px !important;
+        padding: 0 0.85rem !important;
+        font-size: 0.8125rem !important;
+        font-weight: 600 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        border-radius: 6px !important;
+        white-space: nowrap !important;
+        box-shadow: 0 1px 2px rgba(99, 102, 241, 0.2);
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-period-bar {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            padding: 0.55rem 0.65rem !important;
+            gap: 0.5rem !important;
+        }
+
+        .period-filter-wrapper {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.35rem !important;
+            width: 100% !important;
+        }
+
+        .period-badge-label {
+            grid-column: 1 / -1 !important;
+            justify-content: center !important;
+            font-size: 0.75rem !important;
+            padding: 0.3rem 0.5rem !important;
+        }
+
+        .period-select-custom {
+            width: 100% !important;
+            min-width: 0 !important;
+            font-size: 0.78rem !important;
+        }
+
+        .period-reset-btn {
+            grid-column: 1 / -1 !important;
+            justify-content: center !important;
+            height: 30px !important;
+        }
+
+        .dashboard-action-group {
+            width: 100% !important;
+            margin-left: 0 !important;
+        }
+
+        .dashboard-action-btn {
+            width: 100% !important;
+            justify-content: center !important;
+            height: 36px !important;
+        }
+    }
+    .user-stats-grid-6 {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.5rem;
+    }
+    .user-target-row {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 0.65rem;
+    }
+    @media (max-width: 1024px) {
+        .user-stats-grid-6 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        .user-target-row {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 768px) {
+        .user-stats-grid-6 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-    <!-- Welcome Card -->
-    <div class="card mb-6">
-        <div class="card-body">
-            <div class="flex items-center gap-4">
-                <div class="avatar avatar-lg">{{ substr(auth()->user()->name, 0, 1) }}</div>
-                <div>
-                    <h2 class="mb-1">Halo, {{ auth()->user()->name }}!</h2>
-                    <p class="text-muted mb-0">{{ auth()->user()->task ?? 'User' }} •
-                        {{ now()->translatedFormat('l, d F Y') }}
-                    </p>
-                </div>
+    <!-- Dashboard Period & Control Bar -->
+    <div class="dashboard-period-bar">
+        <form action="{{ route('user.dashboard') }}" method="GET" class="period-filter-wrapper">
+            <div class="period-badge-label">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Periode: <strong>{{ $filterLabel }}</strong></span>
             </div>
+
+            <select name="month" class="period-select-custom" onchange="this.form.submit()">
+                <option value="">Semua Bulan</option>
+                @for($m = 1; $m <= 12; $m++)
+                    <option value="{{ $m }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
+                        {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('F') }}
+                    </option>
+                @endfor
+            </select>
+
+            <select name="year" class="period-select-custom" onchange="this.form.submit()">
+                <option value="">Semua Tahun</option>
+                @for($y = now()->year; $y >= 2020; $y--)
+                    <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
+                @endfor
+            </select>
+
+            @if($selectedMonth || $selectedYear)
+                <a href="{{ route('user.dashboard') }}" class="period-reset-btn" title="Reset Periode">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Reset
+                </a>
+            @endif
+        </form>
+
+        <div class="dashboard-action-group">
+            <a href="{{ route('user.attendances.create') }}" class="btn btn-primary dashboard-action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="15" height="15">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Input Absensi
+            </a>
         </div>
     </div>
 
-    <!-- Month Filter -->
-    <div class="card mb-4">
-        <div class="card-body" style="padding: 0.75rem 1rem;">
-            <form action="{{ route('user.dashboard') }}" method="GET" class="flex items-center gap-3"
-                style="flex-wrap: wrap;">
-                <span class="text-muted" style="font-size: 0.85rem;">Periode:</span>
-                <select name="month" class="form-control form-select" style="width: auto; min-width: 120px;" onchange="this.form.submit()">
-                    <option value="">Semua Bulan</option>
-                    @for($m = 1; $m <= 12; $m++)
-                        <option value="{{ $m }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
-                            {{ \Carbon\Carbon::createFromDate(null, $m, 1)->translatedFormat('F') }}
-                        </option>
-                    @endfor
-                </select>
-                <select name="year" class="form-control form-select" style="width: auto; min-width: 90px;" onchange="this.form.submit()">
-                    <option value="">Semua Tahun</option>
-                    @for($y = now()->year; $y >= 2020; $y--)
-                        <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
-                    @endfor
-                </select>
-                @if($selectedMonth || $selectedYear)
-                    <a href="{{ route('user.dashboard') }}" class="btn btn-secondary btn-sm">Reset</a>
-                @endif
-            </form>
-        </div>
-    </div>
-
-    <!-- Stats Grid - Mobile Optimized -->
-    <div class="stats-grid-mobile mb-4">
+    <!-- 6 Compact Stats Row -->
+    <div class="user-stats-grid-6 mb-3">
         <div class="stat-card-compact">
             <div class="stat-icon-sm primary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -56,7 +244,7 @@
             </div>
             <div>
                 <div class="stat-label">Total Live</div>
-                <div class="stat-number">{{ number_format($stats['total_live']) }}</div>
+                <div class="stat-number">{{ number_format($stats['total_live']) }}x</div>
             </div>
         </div>
         <div class="stat-card-compact">
@@ -80,7 +268,7 @@
             </div>
             <div>
                 <div class="stat-label">Penjualan</div>
-                <div class="stat-number">{{ number_format($stats['this_month_sales']) }}</div>
+                <div class="stat-number">{{ number_format($stats['this_month_sales']) }} pcs</div>
             </div>
         </div>
         <div class="stat-card-compact">
@@ -91,14 +279,12 @@
                 </svg>
             </div>
             <div>
-                <div class="stat-label">Gaji</div>
-                <div class="stat-number">Rp {{ number_format($stats['estimated_salary'], 0, ',', '.') }}</div>
+                <div class="stat-label">Estimasi Gaji</div>
+                <div class="stat-number" style="color: var(--success); font-size: 0.92rem;">
+                    Rp {{ number_format($stats['estimated_salary'], 0, ',', '.') }}
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- Content Stats - berjajar seperti box atas -->
-    <div class="stats-grid-mobile mb-4" style="grid-template-columns: repeat(2, 1fr);">
         <div class="stat-card-compact">
             <div class="stat-icon-sm primary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,117 +311,89 @@
         </div>
     </div>
 
-    <!-- T1/T2 Salary Grid -->
-    <div class="term-salary-grid mb-4">
-        <div class="term-card">
-            <div class="term-header">
-                <span class="term-badge t1">T1</span>
-                <span class="term-period">1 - 15</span>
-            </div>
-            <div class="term-body">
-                <div class="term-hours">{{ $termData['t1_hours'] ?? 0 }} <small>jam</small></div>
-                <div class="term-salary">Rp {{ number_format($termData['t1_salary'] ?? 0, 0, ',', '.') }}</div>
-            </div>
-        </div>
-        <div class="term-card">
-            <div class="term-header">
-                <span class="term-badge t2">T2</span>
-                <span class="term-period">16 - {{ $endDay }}</span>
-            </div>
-            <div class="term-body">
-                <div class="term-hours">{{ $termData['t2_hours'] ?? 0 }} <small>jam</small></div>
-                <div class="term-salary">Rp {{ number_format($termData['t2_salary'] ?? 0, 0, ',', '.') }}</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Target Achievement Card -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="flex items-center justify-between mb-2">
-                <h3 style="font-size: 0.95rem; font-weight: 600; margin: 0;">🎯 Target Bulan {{ \Carbon\Carbon::createFromDate($selectedYear ?: now()->year, $selectedMonth ?: now()->month, 1)->translatedFormat('F') }}</h3>
-                <span
-                    style="font-size: 0.8rem; font-weight: 600; color: {{ $targetMet ? 'var(--success)' : 'var(--danger, #ef4444)' }};">
-                    {{ $monthlyHours }}/{{ $monthlyTarget }} jam
-                </span>
-            </div>
-            <!-- Progress Bar -->
-            <div
-                style="background: var(--border, #e5e7eb); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 8px;">
-                <div
-                    style="background: {{ $targetMet ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #818cf8)' }}; height: 100%; border-radius: 10px; width: {{ $targetPercent }}%; transition: width 0.5s ease;">
+    <!-- T1/T2 & Target Achievement Row -->
+    <div class="user-target-row mb-3">
+        <!-- T1 & T2 Cards -->
+        <div class="term-salary-grid" style="margin: 0;">
+            <div class="term-card">
+                <div class="term-header">
+                    <span class="term-badge t1">T1</span>
+                    <span class="term-period">1 - 15</span>
+                </div>
+                <div class="term-body">
+                    <div class="term-hours">{{ $termData['t1_hours'] ?? 0 }} <small>jam</small></div>
+                    <div class="term-salary">Rp {{ number_format($termData['t1_salary'] ?? 0, 0, ',', '.') }}</div>
                 </div>
             </div>
-            <div class="flex items-center justify-between" style="font-size: 0.8rem;">
-                <span style="color: var(--text-muted, #6b7280);">{{ $targetPercent }}%</span>
-                @if($targetMet)
-                    <span style="color: var(--success, #10b981); font-weight: 600;">✅ Target Tercapai!</span>
-                @else
-                    <span style="color: var(--text-muted, #6b7280);">Kurang {{ $monthlyTarget - $monthlyHours }} jam lagi</span>
-                @endif
-            </div>
-
-            @if($monthlyTarget > 0)
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #e5e7eb); display: flex; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span style="font-size: 0.85rem; color: var(--text-muted, #6b7280);">💰 Bonus Penjualan:</span>
-                        <div>
-                            @if($targetMet)
-                                <span style="font-size: 1rem; font-weight: 700; color: var(--success, #10b981);">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</span>
-                            @else
-                                <span style="font-size: 1rem; font-weight: 700; color: var(--text-muted, #6b7280);">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</span>
-                                <span style="font-size: 0.75rem; color: var(--text-muted, #6b7280);">(target belum tercapai)</span>
-                            @endif
-                        </div>
-                    </div>
-                    
-                    @php
-                        $t1 = $termData['t1_salary'] ?? 0;
-                        $t2 = $termData['t2_salary'] ?? 0;
-                        $bonus = $targetMet ? ($monthlyBonus ?? 0) : 0;
-                        $totalSalary = $t1 + $t2 + $bonus;
-                    @endphp
-                    
-                    <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed var(--border, #e5e7eb); padding-top: 8px; margin-top: 4px;">
-                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-color, #1e293b);">Estimasi Total Gaji (T1 + T2 + Bonus):</span>
-                        <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color, #4f46e5);">Rp {{ number_format($totalSalary, 0, ',', '.') }}</span>
-                    </div>
+            <div class="term-card">
+                <div class="term-header">
+                    <span class="term-badge t2">T2</span>
+                    <span class="term-period">16 - {{ $endDay }}</span>
                 </div>
-            @else
+                <div class="term-body">
+                    <div class="term-hours">{{ $termData['t2_hours'] ?? 0 }} <small>jam</small></div>
+                    <div class="term-salary">Rp {{ number_format($termData['t2_salary'] ?? 0, 0, ',', '.') }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Target Achievement Card -->
+        <div class="card" style="margin: 0;">
+            <div class="card-body" style="padding: 0.85rem 1rem;">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 style="font-size: 0.875rem; font-weight: 600; margin: 0;">🎯 Target Bulan {{ \Carbon\Carbon::createFromDate($selectedYear ?: now()->year, $selectedMonth ?: now()->month, 1)->translatedFormat('F') }}</h3>
+                    <span style="font-size: 0.8rem; font-weight: 600; color: {{ $targetMet ? 'var(--success)' : 'var(--danger, #ef4444)' }};">
+                        {{ $monthlyHours }}/{{ $monthlyTarget }} jam ({{ $targetPercent }}%)
+                    </span>
+                </div>
+                <!-- Progress Bar -->
+                <div style="background: var(--border, #e5e7eb); border-radius: 8px; height: 10px; overflow: hidden; margin-bottom: 6px;">
+                    <div style="background: {{ $targetMet ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #818cf8)' }}; height: 100%; border-radius: 8px; width: {{ min(100, $targetPercent) }}%; transition: width 0.5s ease;"></div>
+                </div>
+                <div class="flex items-center justify-between" style="font-size: 0.75rem;">
+                    @if($targetMet)
+                        <span style="color: var(--success, #10b981); font-weight: 600;">✅ Target Tercapai!</span>
+                    @else
+                        <span style="color: var(--text-muted, #6b7280);">Kurang {{ max(0, $monthlyTarget - $monthlyHours) }} jam lagi untuk klaim bonus</span>
+                    @endif
+                    <span style="color: var(--text-muted, #6b7280);">Bonus Penjualan: <strong style="color: {{ $targetMet ? 'var(--success)' : 'var(--text-muted)' }};">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</strong></span>
+                </div>
+
                 @php
                     $t1 = $termData['t1_salary'] ?? 0;
                     $t2 = $termData['t2_salary'] ?? 0;
-                    $totalSalary = $t1 + $t2;
+                    $bonus = $targetMet ? ($monthlyBonus ?? 0) : 0;
+                    $totalSalary = $t1 + $t2 + $bonus;
                 @endphp
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #e5e7eb); display: flex; align-items: center; justify-content: space-between;">
-                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-color, #1e293b);">Estimasi Total Gaji (T1 + T2):</span>
-                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color, #4f46e5);">Rp {{ number_format($totalSalary, 0, ',', '.') }}</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed var(--border, #e5e7eb); padding-top: 6px; margin-top: 8px;">
+                    <span style="font-size: 0.8rem; font-weight: 600;">Estimasi Total Payout (T1 + T2 + Bonus):</span>
+                    <span style="font-size: 1rem; font-weight: 800; color: var(--primary);">Rp {{ number_format($totalSalary, 0, ',', '.') }}</span>
                 </div>
-            @endif
+            </div>
         </div>
     </div>
 
     <!-- Personal Charts Grid -->
-    <div class="grid grid-2 mb-6">
+    <div class="grid grid-2 mb-3">
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Jam Live Harian Saya</h3>
+            <div class="card-header" style="padding: 0.5rem 0.85rem;">
+                <h3 class="card-title" style="font-size: 0.875rem;">Jam Live Harian Saya</h3>
                 <span class="text-muted" style="font-size: 0.75rem;">{{ $filterLabel }}</span>
             </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 180px;">
+            <div class="card-body" style="padding: 0.65rem 0.85rem;">
+                <div class="chart-container" style="height: 170px;">
                     <canvas id="hoursChart"></canvas>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Penjualan Harian Saya</h3>
+            <div class="card-header" style="padding: 0.5rem 0.85rem;">
+                <h3 class="card-title" style="font-size: 0.875rem;">Penjualan Harian Saya</h3>
                 <span class="text-muted" style="font-size: 0.75rem;">{{ $filterLabel }}</span>
             </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 180px;">
+            <div class="card-body" style="padding: 0.65rem 0.85rem;">
+                <div class="chart-container" style="height: 170px;">
                     <canvas id="salesChart"></canvas>
                 </div>
             </div>
@@ -243,94 +401,61 @@
     </div>
 
     <!-- All Users Charts Grid -->
-    <div class="grid grid-2 mb-6">
+    <div class="grid grid-2 mb-3">
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Jam Live Per User</h3>
+            <div class="card-header" style="padding: 0.5rem 0.85rem;">
+                <h3 class="card-title" style="font-size: 0.875rem;">Jam Live Per User</h3>
                 <span class="text-muted" style="font-size: 0.75rem;">{{ $filterLabel }}</span>
             </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 220px;">
+            <div class="card-body" style="padding: 0.65rem 0.85rem;">
+                <div class="chart-container" style="height: 190px;">
                     <canvas id="hoursPerUserChart"></canvas>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Penjualan Per User</h3>
+            <div class="card-header" style="padding: 0.5rem 0.85rem;">
+                <h3 class="card-title" style="font-size: 0.875rem;">Penjualan Per User</h3>
                 <span class="text-muted" style="font-size: 0.75rem;">{{ $filterLabel }}</span>
             </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 220px;">
+            <div class="card-body" style="padding: 0.65rem 0.85rem;">
+                <div class="chart-container" style="height: 190px;">
                     <canvas id="salesPerUserChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions & Recent -->
-    <div class="grid grid-2 mb-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Aksi Cepat</h3>
-            </div>
-            <div class="card-body">
-                <a href="{{ route('user.attendances.create') }}" class="btn btn-primary btn-block mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Input Absensi Baru
-                </a>
-                <a href="{{ route('user.attendances.index') }}" class="btn btn-secondary btn-block">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    Lihat Riwayat Absensi
-                </a>
-            </div>
+    <!-- Recent Attendances -->
+    <div class="card mb-3">
+        <div class="card-header flex items-center justify-between" style="padding: 0.5rem 0.85rem;">
+            <h3 class="card-title" style="font-size: 0.875rem;">Absensi Terbaru</h3>
+            <a href="{{ route('user.attendances.index') }}" class="text-xs text-primary" style="font-weight: 500;">Lihat Semua &rarr;</a>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Absensi Terbaru</h3>
-            </div>
-            <div class="card-body" style="padding: 0;">
-                @forelse($recentAttendances as $attendance)
-                    <div class="flex items-center justify-between"
-                        style="padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border);">
-                        <div>
-                            <div class="font-medium">{{ $attendance->attendance_date->format('d M Y') }}</div>
-                            <div class="text-sm text-muted">{{ $attendance->formatted_duration }}</div>
-                        </div>
+        <div class="card-body" style="padding: 0;">
+            @forelse($recentAttendances as $attendance)
+                <div class="flex items-center justify-between"
+                    style="padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <div class="font-medium text-sm">{{ $attendance->attendance_date->translatedFormat('d M Y') }}</div>
+                        <div class="text-xs text-muted">{{ $attendance->formatted_duration }} • Jual: {{ $attendance->sales_count }}</div>
+                    </div>
+                    <div>
                         @if($attendance->status === 'validated')
-                            <span class="badge badge-success" title="Locked by Admin" style="padding: 0.25rem 0.5rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                    width="16" height="16">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </span>
+                            <span class="badge badge-success badge-sm" title="Tervalidasi">🔒 Tervalidasi</span>
                         @elseif($attendance->status === 'pending')
-                            <span class="badge badge-warning" title="Open (Pending Validation)" style="padding: 0.25rem 0.5rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                    width="16" height="16">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                                </svg>
-                            </span>
+                            <span class="badge badge-warning badge-sm" title="Pending">⏳ Pending</span>
                         @else
-                            <span class="badge badge-danger">Ditolak</span>
+                            <span class="badge badge-danger badge-sm">✕ Ditolak</span>
                         @endif
                     </div>
-                @empty
-                    <div class="text-center text-muted" style="padding: 2rem;">
-                        Belum ada data absensi
-                    </div>
-                @endforelse
-            </div>
+                </div>
+            @empty
+                <div class="text-center text-muted" style="padding: 1.5rem; font-size: 0.85rem;">
+                    Belum ada data absensi
+                </div>
+            @endforelse
         </div>
     </div>
 @endsection

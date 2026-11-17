@@ -45,15 +45,22 @@ class AttendanceController extends Controller
         // Get salary scheme for calculation
         $scheme = $user->salaryScheme;
 
-        // Calculate totals for the filtered result
-        $baseQuery = $user->attendances()
+        // Calculate totals for the filtered result using 1 query
+        $filterTotals = $user->attendances()
             ->whereBetween('attendance_date', [$startDate, $endDate])
-            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status));
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->selectRaw('
+                COALESCE(SUM(live_duration_minutes), 0) as total_minutes,
+                COALESCE(SUM(content_edit_count), 0) as total_content_edit,
+                COALESCE(SUM(content_live_count), 0) as total_content_live,
+                COALESCE(SUM(sales_count), 0) as total_sales
+            ')
+            ->first();
 
-        $totalMinutes = (clone $baseQuery)->sum('live_duration_minutes');
-        $totalContentEdit = (clone $baseQuery)->sum('content_edit_count');
-        $totalContentLive = (clone $baseQuery)->sum('content_live_count');
-        $totalSales = (clone $baseQuery)->sum('sales_count');
+        $totalMinutes = $filterTotals->total_minutes ?? 0;
+        $totalContentEdit = $filterTotals->total_content_edit ?? 0;
+        $totalContentLive = $filterTotals->total_content_live ?? 0;
+        $totalSales = $filterTotals->total_sales ?? 0;
 
         // Calculate total salary (tanpa penjualan, penjualan masuk bonus)
         $totalSalary = 0;
@@ -64,65 +71,52 @@ class AttendanceController extends Controller
                 + ($totalContentLive * $scheme->content_live_rate);
         }
 
-        // Calculate T1 and T2 for selected month (ALL attendance, not just validated)
-        $t1Salary = 0;
-        $t2Salary = 0;
-        $t1Hours = 0;
-        $t2Hours = 0;
-        if ($scheme) {
-            // Termin 1: 1-15 (use toDateString for DATE column)
-            $t1Start = Carbon::createFromDate($year, $month, 1)->toDateString();
-            $t1End = Carbon::createFromDate($year, $month, 15)->toDateString();
-            $t1Minutes = $user->attendances()
-                ->whereBetween('attendance_date', [$t1Start, $t1End])
-                ->sum('live_duration_minutes');
-            $t1ContentEdit = $user->attendances()
-                ->whereBetween('attendance_date', [$t1Start, $t1End])
-                ->sum('content_edit_count');
-            $t1ContentLive = $user->attendances()
-                ->whereBetween('attendance_date', [$t1Start, $t1End])
-                ->sum('content_live_count');
-            $t1Hours = round($t1Minutes / 60, 1);
-            $t1Salary = ($t1Minutes / 60 * $scheme->hourly_rate)
-                + ($t1ContentEdit * $scheme->content_edit_rate)
-                + ($t1ContentLive * $scheme->content_live_rate);
-
-            // Termin 2: 16-end
-            $t2Start = Carbon::createFromDate($year, $month, 16)->toDateString();
-            $t2End = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
-            $t2Minutes = $user->attendances()
-                ->whereBetween('attendance_date', [$t2Start, $t2End])
-                ->sum('live_duration_minutes');
-            $t2ContentEdit = $user->attendances()
-                ->whereBetween('attendance_date', [$t2Start, $t2End])
-                ->sum('content_edit_count');
-            $t2ContentLive = $user->attendances()
-                ->whereBetween('attendance_date', [$t2Start, $t2End])
-                ->sum('content_live_count');
-            $t2Hours = round($t2Minutes / 60, 1);
-            $t2Salary = ($t2Minutes / 60 * $scheme->hourly_rate)
-                + ($t2ContentEdit * $scheme->content_edit_rate)
-                + ($t2ContentLive * $scheme->content_live_rate);
-        }
-
-        // Calculate monthly totals for bonus check (ALL attendance in full month)
+        // Calculate T1, T2, and full month totals in 1 single aggregate query
         $monthStart = Carbon::createFromDate($year, $month, 1)->toDateString();
         $monthEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
         $daysInMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->day;
 
-        $monthlyQuery = $user->attendances()
-            ->whereBetween('attendance_date', [$monthStart, $monthEnd]);
-        $monthlyMinutes = (clone $monthlyQuery)->sum('live_duration_minutes');
-        $monthlyHours = round($monthlyMinutes / 60, 1);
-        $monthlySales = (clone $monthlyQuery)->sum('sales_count');
+        $t1Start = $monthStart;
+        $t1End = Carbon::createFromDate($year, $month, 15)->toDateString();
+        $t2Start = Carbon::createFromDate($year, $month, 16)->toDateString();
+        $t2End = $monthEnd;
 
-        // Target calculation: (days in month - 4 days off) × 3 hours/day
+        $monthAggregates = $user->attendances()
+            ->whereBetween('attendance_date', [$monthStart, $monthEnd])
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN attendance_date BETWEEN '{$t1Start}' AND '{$t1End}' THEN live_duration_minutes ELSE 0 END), 0) as t1_minutes,
+                COALESCE(SUM(CASE WHEN attendance_date BETWEEN '{$t1Start}' AND '{$t1End}' THEN content_edit_count ELSE 0 END), 0) as t1_content_edit,
+                COALESCE(SUM(CASE WHEN attendance_date BETWEEN '{$t1Start}' AND '{$t1End}' THEN content_live_count ELSE 0 END), 0) as t1_content_live,
+                COALESCE(SUM(CASE WHEN attendance_date BETWEEN '{$t2Start}' AND '{$t2End}' THEN live_duration_minutes ELSE 0 END), 0) as t2_minutes,
+                COALESCE(SUM(CASE WHEN attendance_date BETWEEN '{$t2Start}' AND '{$t2End}' THEN content_edit_count ELSE 0 END), 0) as t2_content_edit,
+                COALESCE(SUM(CASE WHEN attendance_date BETWEEN '{$t2Start}' AND '{$t2End}' THEN content_live_count ELSE 0 END), 0) as t2_content_live,
+                COALESCE(SUM(live_duration_minutes), 0) as monthly_minutes,
+                COALESCE(SUM(sales_count), 0) as monthly_sales
+            ")
+            ->first();
+
+        $t1Minutes = $monthAggregates->t1_minutes ?? 0;
+        $t1ContentEdit = $monthAggregates->t1_content_edit ?? 0;
+        $t1ContentLive = $monthAggregates->t1_content_live ?? 0;
+        $t1Hours = round($t1Minutes / 60, 1);
+        $t1Salary = $scheme ? (($t1Minutes / 60 * $scheme->hourly_rate) + ($t1ContentEdit * $scheme->content_edit_rate) + ($t1ContentLive * $scheme->content_live_rate)) : 0;
+
+        $t2Minutes = $monthAggregates->t2_minutes ?? 0;
+        $t2ContentEdit = $monthAggregates->t2_content_edit ?? 0;
+        $t2ContentLive = $monthAggregates->t2_content_live ?? 0;
+        $t2Hours = round($t2Minutes / 60, 1);
+        $t2Salary = $scheme ? (($t2Minutes / 60 * $scheme->hourly_rate) + ($t2ContentEdit * $scheme->content_edit_rate) + ($t2ContentLive * $scheme->content_live_rate)) : 0;
+
+        $monthlyMinutes = $monthAggregates->monthly_minutes ?? 0;
+        $monthlyHours = round($monthlyMinutes / 60, 1);
+        $monthlySales = $monthAggregates->monthly_sales ?? 0;
+
+        // Target calculation: (days in month - 4 days off) * 3 hours/day
         $daysOff = 4;
         $dailyTargetHours = 3;
         $targetHours = ($daysInMonth - $daysOff) * $dailyTargetHours;
 
         $targetMet = $monthlyHours >= $targetHours;
-        // Always calculate bonus based on sales (show potential bonus even if target not met)
         $salesBonus = $monthlySales > 0 ? \App\Models\BonusTier::getBonusForSales($monthlySales) : 0;
 
         $totals = [
@@ -145,7 +139,26 @@ class AttendanceController extends Controller
             'sales_bonus' => $salesBonus,
         ];
 
-        return view('user.attendances.index', compact('attendances', 'totals', 'bonusInfo'));
+        // Pre-aggregate TikTok and Attendance daily totals for the paginated items to eliminate N+1 queries in view
+        $dates = $attendances->pluck('attendance_date')->map(fn($d) => Carbon::parse($d)->toDateString())->unique()->values()->all();
+        $tiktokTotalsByDate = [];
+        $attendanceTotalsByDate = [];
+
+        if (!empty($dates)) {
+            $tiktokTotalsByDate = \App\Models\TiktokReportDetail::whereIn('live_date', $dates)
+                ->groupBy('live_date')
+                ->selectRaw('live_date, SUM(duration_minutes) as total')
+                ->pluck('total', 'live_date')
+                ->toArray();
+
+            $attendanceTotalsByDate = Attendance::whereIn('attendance_date', $dates)
+                ->groupBy('attendance_date')
+                ->selectRaw('attendance_date, SUM(live_duration_minutes) as total')
+                ->pluck('total', 'attendance_date')
+                ->toArray();
+        }
+
+        return view('user.attendances.index', compact('attendances', 'totals', 'bonusInfo', 'tiktokTotalsByDate', 'attendanceTotalsByDate'));
     }
 
     /**

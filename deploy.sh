@@ -4,7 +4,7 @@
 # Script Auto Deploy Laravel - Tiktok Live Manager
 # Domain : live.groovy-media.com
 # Cara Pakai di Terminal Server:
-# bash /www/wwwroot/live.groovy-media.com/deploy.sh
+# bash /www/wwwroot/live.groovy/deploy.sh
 # ==============================================================================
 
 # Menghentikan script jika terjadi error fatal

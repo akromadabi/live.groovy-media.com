@@ -117,31 +117,29 @@ class AttendanceController extends Controller
         $bonusInfo = null;
         if ($selectedUser) {
             $scheme = $selectedUser->salaryScheme;
-            $monthStart = Carbon::createFromDate($year, $month, 1)->startOfMonth()->startOfDay();
-            $monthEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
+            $monthStart = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+            $monthEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth();
             $daysInMonth = $monthStart->daysInMonth;
 
-            $monthlyMinutes = $selectedUser->attendances()
+            // Single query for the user's entire month attendances instead of 5 separate queries
+            $monthAttendances = $selectedUser->attendances()
                 ->whereBetween('attendance_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-                ->sum('live_duration_minutes');
+                ->get();
+
+            $monthlyMinutes = $monthAttendances->sum('live_duration_minutes');
             $monthlyHours = round($monthlyMinutes / 60, 1);
-            $monthlySales = $selectedUser->attendances()
-                ->whereBetween('attendance_date', [$monthStart, $monthEnd])
-                ->sum('sales_count');
+            $monthlySales = $monthAttendances->sum('sales_count');
 
             // Target calculation: use scheme monthly target if set, otherwise fallback to formula
             $daysOff = 4;
             $dailyTargetHours = 3;
-            $targetHours = $scheme ? $scheme->getTargetHoursForPlatform() : (float) Setting::getValue('monthly_target_hours', ($daysInMonth - $daysOff) * $dailyTargetHours);
+            $targetHours = $scheme ? $scheme->getTargetHoursForPlatform() : (float) \App\Models\Setting::getValue('monthly_target_hours', ($daysInMonth - $daysOff) * $dailyTargetHours);
 
             $targetMet = $monthlyHours >= $targetHours;
 
             // Daily sales bonus calculation (grouped by date) - include pending and validated
             $salesBonus = 0;
-            $validatedAttendances = $selectedUser->attendances()
-                ->whereIn('status', ['pending', 'validated'])
-                ->whereBetween('attendance_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-                ->get();
+            $validatedAttendances = $monthAttendances->whereIn('status', ['pending', 'validated']);
 
             // Group sales by date
             $dailySales = [];
@@ -182,19 +180,9 @@ class AttendanceController extends Controller
                 'total_salary' => $totalSalary,
             ];
 
-            // Calculate Termin Salary (T1 & T2)
-            $t1Start = Carbon::createFromDate($year, $month, 1)->toDateString();
-            $t1End = Carbon::createFromDate($year, $month, 15)->toDateString();
-            $t2Start = Carbon::createFromDate($year, $month, 16)->toDateString();
-            $t2End = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
-
-            $t1Attendances = $selectedUser->attendances()
-                ->whereBetween('attendance_date', [$t1Start, $t1End])
-                ->get();
-
-            $t2Attendances = $selectedUser->attendances()
-                ->whereBetween('attendance_date', [$t2Start, $t2End])
-                ->get();
+            // Calculate Termin Salary (T1 & T2) in memory from $monthAttendances
+            $t1Attendances = $monthAttendances->filter(fn($a) => (int) $a->attendance_date->day <= 15);
+            $t2Attendances = $monthAttendances->filter(fn($a) => (int) $a->attendance_date->day >= 16);
 
             $calculateTermin = function ($attendances) use ($scheme) {
                 $minutes = $attendances->sum('live_duration_minutes');
@@ -266,19 +254,25 @@ class AttendanceController extends Controller
             ->whereIn('user_id', $users->pluck('id'))
             ->get();
 
-        // Group attendances by user_id and day of month
+        // Pre-group attendances by user_id and day of month in O(N) single pass
+        $groupedByUserDay = [];
+        $groupedByUser = [];
+        foreach ($attendances as $att) {
+            $uid = $att->user_id;
+            $day = (int) $att->attendance_date->day;
+            $groupedByUserDay[$uid][$day][] = $att;
+            $groupedByUser[$uid][] = $att;
+        }
+
         $matrixData = [];
         $userSummaries = [];
 
         foreach ($users as $user) {
-            $userAttendances = $attendances->where('user_id', $user->id);
+            $userAttendances = collect($groupedByUser[$user->id] ?? []);
 
             $userMatrix = [];
             for ($d = 1; $d <= $daysInMonth; $d++) {
-                $dateStr = Carbon::createFromDate($year, $month, $d)->toDateString();
-                $dayAttendances = $userAttendances->filter(function($a) use ($dateStr) {
-                    return Carbon::parse($a->attendance_date)->toDateString() === $dateStr;
-                });
+                $dayAttendances = collect($groupedByUserDay[$user->id][$d] ?? []);
 
                 if ($dayAttendances->isNotEmpty()) {
                     $totalMinutes = $dayAttendances->sum('live_duration_minutes');

@@ -55,30 +55,40 @@ class AttendanceController extends Controller
         // Get salary scheme for calculation
         $scheme = $user->salaryScheme;
 
-        // Calculate totals for the filtered result using 1 query
-        $filterTotals = $user->attendances()
-            ->whereBetween('attendance_date', [$startDate, $endDate])
-            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
-            ->when($request->filled('platform'), fn($q) => $q->where('platform', $request->platform))
-            ->selectRaw('
-                COALESCE(SUM(live_duration_minutes), 0) as total_minutes,
-                COALESCE(SUM(content_edit_count), 0) as total_content_edit,
-                COALESCE(SUM(content_live_count), 0) as total_content_live,
-                COALESCE(SUM(sales_count), 0) as total_sales
-            ')
-            ->first();
+        // Calculate T1, T2, and full month totals from a single monthly query
+        $monthStart = Carbon::createFromDate($year, $month, 1)->toDateString();
+        $monthEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+        $daysInMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->day;
 
-        $totalMinutes = $filterTotals->total_minutes ?? 0;
-        $totalContentEdit = $filterTotals->total_content_edit ?? 0;
-        $totalContentLive = $filterTotals->total_content_live ?? 0;
-        $totalSales = $filterTotals->total_sales ?? 0;
+        $t1Start = $monthStart;
+        $t1End = Carbon::createFromDate($year, $month, 15)->toDateString();
+        $t2Start = Carbon::createFromDate($year, $month, 16)->toDateString();
+        $t2End = $monthEnd;
 
-        // Calculate total salary and platform breakdown
-        $attendancesForSalary = $user->attendances()
-            ->whereBetween('attendance_date', [$startDate, $endDate])
-            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
-            ->when($request->filled('platform'), fn($q) => $q->where('platform', $request->platform))
+        // Single query for the user's month attendances
+        $monthAttendances = $user->attendances()
+            ->whereBetween('attendance_date', [$monthStart, $monthEnd])
             ->get();
+
+        // Filter in memory for current term/status/platform selection
+        $attendancesForSalary = $monthAttendances->filter(function ($att) use ($startDate, $endDate, $request) {
+            $d = $att->attendance_date->toDateString();
+            if ($d < $startDate || $d > $endDate) {
+                return false;
+            }
+            if ($request->filled('status') && $att->status !== $request->status) {
+                return false;
+            }
+            if ($request->filled('platform') && ($att->platform ?? 'tiktok') !== $request->platform) {
+                return false;
+            }
+            return true;
+        })->values();
+
+        $totalMinutes = $attendancesForSalary->sum('live_duration_minutes');
+        $totalContentEdit = $attendancesForSalary->sum('content_edit_count');
+        $totalContentLive = $attendancesForSalary->sum('content_live_count');
+        $totalSales = $attendancesForSalary->sum('sales_count');
 
         $platformBreakdown = [];
         $totalSalary = 0;
@@ -97,21 +107,6 @@ class AttendanceController extends Controller
                 ];
             }
         }
-
-        // Calculate T1, T2, and full month totals
-        $monthStart = Carbon::createFromDate($year, $month, 1)->toDateString();
-        $monthEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
-        $daysInMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->day;
-
-        $t1Start = $monthStart;
-        $t1End = Carbon::createFromDate($year, $month, 15)->toDateString();
-        $t2Start = Carbon::createFromDate($year, $month, 16)->toDateString();
-        $t2End = $monthEnd;
-
-        // Fetch attendances for T1 and T2 salary calculation
-        $monthAttendances = $user->attendances()
-            ->whereBetween('attendance_date', [$monthStart, $monthEnd])
-            ->get();
 
         $t1Salary = 0;
         $t2Salary = 0;
@@ -196,17 +191,17 @@ class AttendanceController extends Controller
         $attendanceTotalsByDate = [];
 
         if (!empty($dates)) {
-            $tiktokTotalsByDate = \App\Models\TiktokReportDetail::whereIn('live_date', $dates)
+            $tiktokTotalsByDate = \App\Models\TiktokReportDetail::where('user_id', $user->id)
+                ->whereIn('live_date', $dates)
                 ->groupBy('live_date')
                 ->selectRaw('live_date, SUM(duration_minutes) as total')
                 ->pluck('total', 'live_date')
                 ->toArray();
 
-            $attendanceTotalsByDate = Attendance::whereIn('attendance_date', $dates)
-                ->groupBy('attendance_date')
-                ->selectRaw('attendance_date, SUM(live_duration_minutes) as total')
-                ->pluck('total', 'attendance_date')
-                ->toArray();
+            foreach ($monthAttendances as $ma) {
+                $dStr = $ma->attendance_date->toDateString();
+                $attendanceTotalsByDate[$dStr] = ($attendanceTotalsByDate[$dStr] ?? 0) + $ma->live_duration_minutes;
+            }
         }
 
         $allMarketplaces = Setting::getMarketplaces();
@@ -297,7 +292,7 @@ class AttendanceController extends Controller
         $rules = [
             'platform' => "required|string|in:{$allowedPlatforms}",
             'attendance_date' => 'required|date|before_or_equal:today',
-            'session_name' => 'required|string|max:50',
+            'session_name' => 'nullable|string|max:50',
             'live_duration_hours' => 'required|numeric|min:0.5|max:24',
             'content_edit_count' => 'nullable|integer|min:0|max:10',
             'content_live_count' => 'nullable|integer|min:0|max:10',
@@ -315,22 +310,39 @@ class AttendanceController extends Controller
 
         $validated = $request->validate($rules);
 
-        // Convert decimal hours to minutes (e.g., 1.5 hours = 90 minutes)
-        $totalMinutes = (int) ($validated['live_duration_hours'] * 60);
-
-        // Check if attendance already exists for this date, session, AND platform
-        $existing = Auth::user()->attendances()
-            ->whereDate('attendance_date', $validated['attendance_date'])
-            ->where('session_name', $validated['session_name'])
-            ->where('platform', $validated['platform'])
-            ->first();
-
         $platformInfo = Setting::getPlatformInfo($validated['platform']);
         $platformName = $platformInfo['name'] ?? ucfirst($validated['platform']);
 
-        if ($existing) {
-            return back()->withInput()->with('error', "Absensi untuk {$platformName} pada {$validated['session_name']} tanggal ini sudah ada. Silakan pilih sesi lain atau edit absensi yang sudah ada.");
+        // Convert decimal hours to minutes (e.g., 1.5 hours = 90 minutes)
+        $totalMinutes = (int) ($validated['live_duration_hours'] * 60);
+
+        // Determine session name: if omitted, auto-assign next available session for this date & platform
+        $sessionName = $validated['session_name'] ?? null;
+        if (empty($sessionName)) {
+            $existingSessions = Auth::user()->attendances()
+                ->whereDate('attendance_date', $validated['attendance_date'])
+                ->where('platform', $validated['platform'])
+                ->pluck('session_name')
+                ->toArray();
+
+            $sessionIndex = 1;
+            while (in_array("Sesi {$sessionIndex}", $existingSessions)) {
+                $sessionIndex++;
+            }
+            $sessionName = "Sesi {$sessionIndex}";
+        } else {
+            // Check if attendance already exists for this date, session, AND platform
+            $existing = Auth::user()->attendances()
+                ->whereDate('attendance_date', $validated['attendance_date'])
+                ->where('session_name', $sessionName)
+                ->where('platform', $validated['platform'])
+                ->first();
+
+            if ($existing) {
+                return back()->withInput()->with('error', "Absensi untuk {$platformName} pada {$sessionName} tanggal ini sudah ada. Silakan edit absensi yang sudah ada.");
+            }
         }
+        $validated['session_name'] = $sessionName;
 
         $proofPath = null;
         if ($request->hasFile('proof_image')) {
@@ -441,7 +453,7 @@ class AttendanceController extends Controller
         $rules = [
             'platform' => "required|string|in:{$allowedPlatforms}",
             'attendance_date' => 'required|date|before_or_equal:today',
-            'session_name' => 'required|string|max:50',
+            'session_name' => 'nullable|string|max:50',
             'live_duration_hours' => 'required|numeric|min:0.5|max:24',
             'content_edit_count' => 'nullable|integer|min:0|max:10',
             'content_live_count' => 'nullable|integer|min:0|max:10',
@@ -460,18 +472,22 @@ class AttendanceController extends Controller
 
         $validated = $request->validate($rules);
 
+        $sessionName = $validated['session_name'] ?? $attendance->session_name ?? 'Sesi 1';
+
         // Check if session conflicts with another entry with same platform
         $existing = Auth::user()->attendances()
             ->whereDate('attendance_date', $validated['attendance_date'])
-            ->where('session_name', $validated['session_name'])
+            ->where('session_name', $sessionName)
             ->where('platform', $validated['platform'])
             ->where('id', '!=', $attendance->id)
             ->first();
 
         if ($existing) {
             $platformInfo = Setting::getPlatformInfo($validated['platform']);
-            return back()->withInput()->with('error', "Absensi untuk {$platformInfo['name']} pada {$validated['session_name']} tanggal ini sudah ada.");
+            return back()->withInput()->with('error', "Absensi untuk {$platformInfo['name']} pada {$sessionName} tanggal ini sudah ada.");
         }
+
+        $validated['session_name'] = $sessionName;
 
         // Convert decimal hours to minutes
         $totalMinutes = (int) ($validated['live_duration_hours'] * 60);

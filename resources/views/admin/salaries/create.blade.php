@@ -18,7 +18,7 @@
         </div>
         <div class="card-body">
             <div class="alert alert-info mb-4">
-                <strong>📌 Info:</strong> Sistem akan menghitung gaji berdasarkan absensi yang sudah tervalidasi pada
+                <strong>Info:</strong> Sistem akan menghitung gaji berdasarkan absensi yang sudah tervalidasi pada
                 periode yang dipilih. Bonus penjualan hanya dihitung jika target durasi bulanan tercapai.
             </div>
 

@@ -4,100 +4,197 @@
 
 @push('styles')
 <style>
-    .platform-selector {
-        display: flex;
-        gap: 0.6rem;
-        flex-wrap: wrap;
-        margin-bottom: 0.85rem;
+    .attendance-form-page {
+        max-width: 580px;
     }
+
+    .attendance-form-page .btn-back-attendance {
+        height: 30px !important;
+        padding: 0 0.65rem !important;
+        font-size: 0.76rem !important;
+        font-weight: 600 !important;
+        border-radius: 7px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.3rem !important;
+        flex-shrink: 0;
+    }
+
+    .attendance-form-page .attendance-form-card {
+        border-radius: 12px !important;
+    }
+
+    .attendance-form-page .attendance-form-card > .card-header {
+        padding: 0.75rem 1rem !important;
+    }
+
+    .attendance-form-page .attendance-form-card .card-title {
+        font-size: 0.98rem !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+    }
+
+    .attendance-form-page .attendance-form-subtitle {
+        font-size: 0.76rem !important;
+        margin-top: 1px;
+    }
+
+    .attendance-form-page .attendance-form-card > .card-body {
+        padding: 0.9rem 1rem !important;
+    }
+
+    .attendance-form-page .form-group {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .attendance-form-page .form-label {
+        font-size: 0.8125rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.3rem !important;
+        color: var(--text-primary);
+    }
+
+    .attendance-form-page .form-control,
+    .attendance-form-page .form-select {
+        height: 38px !important;
+        padding: 0.4rem 0.75rem !important;
+        font-size: 0.85rem !important;
+        border-radius: 8px !important;
+    }
+
+    .attendance-form-page .form-select {
+        padding-right: 2rem !important;
+    }
+
+    .attendance-form-page textarea.form-control {
+        height: auto !important;
+        min-height: 64px !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .attendance-form-page input[type="file"].form-control {
+        height: auto !important;
+        min-height: 38px !important;
+        padding: 0.4rem 0.65rem !important;
+    }
+
+    .platform-selector {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
     .platform-chip {
-        flex: 1;
-        min-width: 130px;
-        border: 2px solid var(--border);
-        border-radius: 12px;
-        padding: 0.65rem 0.85rem;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        padding: 0.55rem 0.65rem;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 0.65rem;
+        gap: 0.5rem;
         background: var(--surface);
-        transition: all 0.2s ease;
+        transition: all 0.18s ease;
         user-select: none;
+        min-width: 0;
     }
+
     .platform-chip.active {
         border-color: #4f46e5;
         background: rgba(99, 102, 241, 0.05);
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
     }
+
     .platform-chip[data-platform="tiktok"].active {
         border-color: #0f172a;
-        background: rgba(15, 23, 42, 0.05);
+        background: rgba(15, 23, 42, 0.04);
     }
+
     .platform-chip[data-platform="shopee"].active {
         border-color: #ea580c;
-        background: rgba(234, 88, 12, 0.06);
+        background: rgba(234, 88, 12, 0.05);
     }
-    .platform-chip-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.15rem;
-        flex-shrink: 0;
-    }
+
     .platform-chip-info {
         flex: 1;
-        overflow: hidden;
+        min-width: 0;
     }
+
     .platform-chip-name {
-        font-size: 0.85rem;
+        font-size: 0.825rem;
         font-weight: 700;
         color: var(--text-primary);
         display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
+
     .platform-chip-check {
         width: 18px;
         height: 18px;
         border-radius: 50%;
-        border: 2px solid var(--border);
+        border: 1.5px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
     }
+
     .platform-chip.active .platform-chip-check {
         background: #4f46e5;
         border-color: #4f46e5;
         color: #fff;
     }
+
     .platform-chip[data-platform="tiktok"].active .platform-chip-check {
         background: #0f172a;
         border-color: #0f172a;
     }
+
     .platform-chip[data-platform="shopee"].active .platform-chip-check {
         background: #ea580c;
         border-color: #ea580c;
+    }
+
+    /* Sales & Content Compact 3-Column Row */
+    .sales-content-grid {
+        display: grid;
+        grid-template-columns: 1.25fr 0.9fr 0.9fr;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .sales-content-grid .form-group {
+        margin-bottom: 0 !important;
+    }
+
+    /* Submit Action Buttons */
+    .attendance-submit-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .attendance-submit-actions .btn {
+        height: 38px !important;
+        padding: 0 1rem !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
     }
 </style>
 @endpush
 
 @section('content')
-    <div class="mb-3">
-        <a href="{{ route('user.attendances.index') }}" class="btn btn-secondary btn-sm" style="height: 32px;">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Kembali
-        </a>
-    </div>
-
-    <div class="card" style="max-width: 600px;">
-        <div class="card-header" style="padding: 0.75rem 1rem;">
-            <h3 class="card-title" style="font-size: 0.95rem; font-weight: 700;">Edit Absensi</h3>
-            <p class="text-xs text-muted mb-0">Ubah data absensi yang masih berstatus pending</p>
+<div class="attendance-form-page">
+    <div class="card attendance-form-card">
+        <div class="card-header">
+            <h3 class="card-title">Edit Absensi</h3>
+            <p class="text-muted mb-0 attendance-form-subtitle">Ubah data absensi yang masih berstatus pending</p>
         </div>
-        <div class="card-body" style="padding: 1.15rem;">
+        <div class="card-body">
             @php
                 $currentHours = $attendance->live_duration_minutes / 60;
                 $currentHours = round($currentHours * 2) / 2;
@@ -109,8 +206,8 @@
                 @method('PUT')
 
                 <!-- Platform Selection -->
-                <div class="form-group mb-3">
-                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Platform Live <span class="text-danger">*</span></label>
+                <div class="form-group">
+                    <label class="form-label">Platform Live <span class="text-danger">*</span></label>
                     <input type="hidden" name="platform" id="input_platform" value="{{ $currentPlatform }}">
                     <div class="platform-selector">
                         @foreach($activeMarketplaces as $mpKey => $mp)
@@ -132,34 +229,19 @@
                     </div>
                 </div>
 
-                <div class="form-row mb-3">
-                    <div class="form-group mb-0" style="flex: 1.2;">
-                        <label for="attendance_date" class="form-label" style="font-size: 0.8rem; font-weight: 600;">Tanggal <span class="text-danger">*</span></label>
-                        <input type="date" name="attendance_date" id="attendance_date" class="form-control"
-                            value="{{ old('attendance_date', $attendance->attendance_date->format('Y-m-d')) }}"
-                            @if(!empty($minDate)) min="{{ $minDate }}" @endif
-                            max="{{ date('Y-m-d') }}" required>
-                        @error('attendance_date')
-                            <div class="form-error">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="form-group mb-0" style="flex: 1;">
-                        <label for="session_name" class="form-label" style="font-size: 0.8rem; font-weight: 600;">Sesi / Shift <span class="text-danger">*</span></label>
-                        <select name="session_name" id="session_name" class="form-control form-select" required>
-                            <option value="Sesi 1" {{ old('session_name', $attendance->session_name ?? 'Sesi 1') == 'Sesi 1' ? 'selected' : '' }}>Sesi 1 (Pagi)</option>
-                            <option value="Sesi 2" {{ old('session_name', $attendance->session_name) == 'Sesi 2' ? 'selected' : '' }}>Sesi 2 (Siang/Sore)</option>
-                            <option value="Sesi 3" {{ old('session_name', $attendance->session_name) == 'Sesi 3' ? 'selected' : '' }}>Sesi 3 (Malam)</option>
-                            <option value="Sesi 4" {{ old('session_name', $attendance->session_name) == 'Sesi 4' ? 'selected' : '' }}>Sesi 4 (Subuh/Lembur)</option>
-                        </select>
-                        @error('session_name')
-                            <div class="form-error">{{ $message }}</div>
-                        @enderror
-                    </div>
+                <div class="form-group">
+                    <label for="attendance_date" class="form-label">Tanggal Live <span class="text-danger">*</span></label>
+                    <input type="date" name="attendance_date" id="attendance_date" class="form-control"
+                        value="{{ old('attendance_date', $attendance->attendance_date->format('Y-m-d')) }}"
+                        @if(!empty($minDate)) min="{{ $minDate }}" @endif
+                        max="{{ date('Y-m-d') }}" required>
+                    @error('attendance_date')
+                        <div class="form-error">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                <div class="form-group mb-3">
-                    <label for="live_duration_hours" class="form-label" style="font-size: 0.8rem; font-weight: 600;">Durasi Live (Jam) <span class="text-danger">*</span></label>
+                <div class="form-group">
+                    <label for="live_duration_hours" class="form-label">Durasi Live (Jam) <span class="text-danger">*</span></label>
                     <select name="live_duration_hours" id="live_duration_hours" class="form-control form-select" required>
                         <option value="">Pilih Durasi</option>
                         @foreach([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8] as $duration)
@@ -173,17 +255,17 @@
                     @enderror
                 </div>
 
-                <div class="form-row mb-3">
-                    <div class="form-group mb-0" style="flex: 1.2;">
-                        <label for="sales_count" class="form-label" style="font-size: 0.8rem; font-weight: 600;">Jumlah Penjualan (pcs) <span class="text-danger">*</span></label>
+                <div class="sales-content-grid">
+                    <div class="form-group">
+                        <label for="sales_count" class="form-label">Penjualan (pcs) <span class="text-danger">*</span></label>
                         <input type="number" name="sales_count" id="sales_count" class="form-control"
                             value="{{ old('sales_count', $attendance->sales_count) }}" min="0" required>
                         @error('sales_count')
                             <div class="form-error">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="form-group mb-0" style="flex: 1;">
-                        <label for="content_edit_count" class="form-label" style="font-size: 0.8rem;">Konten Edit</label>
+                    <div class="form-group">
+                        <label for="content_edit_count" class="form-label">Konten Edit</label>
                         <select name="content_edit_count" id="content_edit_count" class="form-control form-select">
                             <option value="0" {{ old('content_edit_count', $attendance->content_edit_count) == 0 ? 'selected' : '' }}>0</option>
                             @foreach([1, 2, 3, 4] as $count)
@@ -191,8 +273,8 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="form-group mb-0" style="flex: 1;">
-                        <label for="content_live_count" class="form-label" style="font-size: 0.8rem;">Konten Live</label>
+                    <div class="form-group">
+                        <label for="content_live_count" class="form-label">Konten Live</label>
                         <select name="content_live_count" id="content_live_count" class="form-control form-select">
                             <option value="0" {{ old('content_live_count', $attendance->content_live_count) == 0 ? 'selected' : '' }}>0</option>
                             @foreach([1, 2, 3, 4] as $count)
@@ -203,8 +285,8 @@
                 </div>
 
                 @if(!empty($settings['proof_enabled']))
-                    <div class="form-group mb-3">
-                        <label for="proof_image" class="form-label flex items-center justify-between" style="font-size: 0.8rem; font-weight: 600;">
+                    <div class="form-group">
+                        <label for="proof_image" class="form-label flex items-center justify-between">
                             <span>
                                 Bukti Screenshot (Proof of Work)
                                 @if(!empty($settings['proof_required']) && empty($attendance->proof_image))
@@ -213,7 +295,7 @@
                                     <span class="text-muted">(Opsional)</span>
                                 @endif
                             </span>
-                            <span class="text-xs text-muted" style="color: #10b981; font-weight: 600;">Auto-Compress HD</span>
+                            <span class="text-muted" style="color: #10b981; font-size: 0.72rem; font-weight: 600;">Auto-Compress HD</span>
                         </label>
 
                         @if($attendance->proof_image)
@@ -233,8 +315,8 @@
                 @endif
 
                 @if(!empty($settings['vt_link_enabled']))
-                    <div class="form-group mb-3">
-                        <label for="vt_link" class="form-label" id="vt_link_label" style="font-size: 0.8rem; font-weight: 600;">
+                    <div class="form-group">
+                        <label for="vt_link" class="form-label" id="vt_link_label">
                             Link Video / Live
                             @if(!empty($settings['vt_link_required']))
                                 <span class="text-danger">*</span>
@@ -251,23 +333,23 @@
                     </div>
                 @endif
 
-                <div class="form-group mb-3">
-                    <label for="notes" class="form-label" style="font-size: 0.8rem;">Catatan</label>
+                <div class="form-group">
+                    <label for="notes" class="form-label">Catatan</label>
                     <textarea name="notes" id="notes" class="form-control" rows="2">{{ old('notes', $attendance->notes) }}</textarea>
                 </div>
 
-                <div class="flex items-center gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 1.25rem; font-size: 0.85rem; font-weight: 600;">
+                <div class="attendance-submit-actions">
+                    <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Simpan Perubahan
+                        <span>Simpan Perubahan</span>
                     </button>
-                    <a href="{{ route('user.attendances.index') }}" class="btn btn-secondary" style="height: 38px; padding: 0 1rem; font-size: 0.85rem;">Batal</a>
                 </div>
             </form>
         </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')

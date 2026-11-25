@@ -49,7 +49,7 @@
                             <td class="text-muted">Total Jam</td>
                             <td class="text-right">{{ $salary->total_hours }} jam
                                 @if($salary->target_met)
-                                    <span class="badge badge-success" style="margin-left: 4px;">Target ✓</span>
+                                    <span class="badge badge-success" style="margin-left: 4px;">Target Tercapai</span>
                                 @else
                                     <span class="badge badge-warning" style="margin-left: 4px;">Belum Target</span>
                                 @endif

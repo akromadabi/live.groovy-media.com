@@ -448,8 +448,185 @@ function parseCellValue(text) {
 
 
 /**
- * Smooth Page Transition Progress Bar
+ * Smooth Page Transition Progress Bar & Fast AJAX Filter/Tab Navigation
  */
+let __activeFilterAbortController = null;
+
+function showProgressBar() {
+    let progressBar = document.getElementById('page-progress-bar');
+    if (!progressBar) return;
+    progressBar.style.opacity = '1';
+    progressBar.style.width = '40%';
+    clearTimeout(progressBar.__t1);
+    clearTimeout(progressBar.__t2);
+    progressBar.__t1 = setTimeout(() => { progressBar.style.width = '75%'; }, 120);
+    progressBar.__t2 = setTimeout(() => { progressBar.style.width = '90%'; }, 350);
+}
+
+function hideProgressBar() {
+    let progressBar = document.getElementById('page-progress-bar');
+    if (!progressBar) return;
+    clearTimeout(progressBar.__t1);
+    clearTimeout(progressBar.__t2);
+    progressBar.style.width = '100%';
+    setTimeout(() => {
+        progressBar.style.opacity = '0';
+        setTimeout(() => { progressBar.style.width = '0%'; }, 200);
+    }, 80);
+}
+
+window.navigateFilterUrl = async function (url, pushHistory = true) {
+    const currentMain = document.querySelector('main.page-content');
+    if (!currentMain || !window.fetch || !window.DOMParser) {
+        window.location.href = url;
+        return;
+    }
+
+    if (__activeFilterAbortController) {
+        __activeFilterAbortController.abort();
+    }
+    __activeFilterAbortController = new AbortController();
+
+    showProgressBar();
+    currentMain.classList.add('is-loading-content');
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html,application/xhtml+xml'
+            },
+            credentials: 'same-origin',
+            signal: __activeFilterAbortController.signal
+        });
+
+        if (!response.ok || response.redirected && response.url.includes('/login')) {
+            window.location.href = url;
+            return;
+        }
+
+        const htmlText = await response.text();
+        const parser = new DOMParser();
+        const newDoc = parser.parseFromString(htmlText, 'text/html');
+        const newMain = newDoc.querySelector('main.page-content');
+
+        if (!newMain) {
+            window.location.href = url;
+            return;
+        }
+
+        // Destroy any existing Chart.js instances inside currentMain before swapping DOM
+        if (window.Chart) {
+            currentMain.querySelectorAll('canvas').forEach(canvas => {
+                try {
+                    const chart = Chart.getChart(canvas);
+                    if (chart) chart.destroy();
+                } catch (e) {}
+            });
+        }
+
+        // Update page title & top header-left if changed
+        if (newDoc.title) {
+            document.title = newDoc.title;
+        }
+        const currentHeaderLeft = document.querySelector('.header .header-left');
+        const newHeaderLeft = newDoc.querySelector('.header .header-left');
+        if (currentHeaderLeft && newHeaderLeft) {
+            currentHeaderLeft.innerHTML = newHeaderLeft.innerHTML;
+        }
+
+        // Swap main page content
+        currentMain.innerHTML = newMain.innerHTML;
+        currentMain.classList.remove('is-loading-content');
+        document.body.style.overflow = '';
+
+        // Update URL in browser address bar
+        const finalUrl = response.url || url;
+        if (pushHistory) {
+            window.history.pushState({ ajaxSwap: true }, '', finalUrl);
+        }
+
+        // Collect inline scripts to execute (from newMain and pushed body scripts after .app-container)
+        const scriptsToRun = [];
+        newDoc.body.querySelectorAll('script:not([src])').forEach(scr => {
+            const code = scr.textContent || '';
+            if (code.includes('function confirmDelete(formId)')) {
+                return; // Skip global layout script
+            }
+            scriptsToRun.push(code);
+        });
+
+        // Temporarily intercept document.addEventListener('DOMContentLoaded') so page scripts run immediately
+        const origAddEventListener = document.addEventListener;
+        const pendingDomReadyCallbacks = [];
+        document.addEventListener = function (type, listener, options) {
+            if (type === 'DOMContentLoaded' && typeof listener === 'function') {
+                pendingDomReadyCallbacks.push(listener);
+                return;
+            }
+            return origAddEventListener.call(document, type, listener, options);
+        };
+
+        try {
+            scriptsToRun.forEach(code => {
+                try {
+                    const scriptEl = document.createElement('script');
+                    scriptEl.textContent = code;
+                    document.body.appendChild(scriptEl);
+                    scriptEl.remove();
+                } catch (err) {
+                    console.error('Error executing page script:', err);
+                }
+            });
+        } finally {
+            document.addEventListener = origAddEventListener;
+        }
+
+        // Execute any captured DOMContentLoaded callbacks
+        pendingDomReadyCallbacks.forEach(fn => {
+            try {
+                fn(new Event('DOMContentLoaded'));
+            } catch (err) {
+                console.error('Error in DOMContentLoaded callback:', err);
+            }
+        });
+
+        // Re-initialize UI components inside the swapped main content
+        initDropdowns();
+        initModals();
+        initAlerts();
+        initTableSorting();
+        hideProgressBar();
+    } catch (err) {
+        if (err && err.name === 'AbortError') {
+            return; // Superseded by a newer filter selection
+        }
+        currentMain.classList.remove('is-loading-content');
+        window.location.href = url;
+    }
+};
+
+window.navigateFilterForm = function (form) {
+    if (!form) return;
+    const method = (form.getAttribute('method') || 'GET').toUpperCase();
+    if (method !== 'GET') {
+        form.submit();
+        return;
+    }
+    const action = form.getAttribute('action') || window.location.pathname;
+    const formData = new FormData(form);
+    const params = new URLSearchParams();
+    for (const [key, val] of formData.entries()) {
+        if (val !== null && String(val) !== '') {
+            params.append(key, String(val));
+        }
+    }
+    const qs = params.toString();
+    const targetUrl = action.split('?')[0] + (qs ? '?' + qs : '');
+    window.navigateFilterUrl(targetUrl);
+};
+
 function initPageProgressBar() {
     let progressBar = document.getElementById('page-progress-bar');
     if (!progressBar) {
@@ -472,39 +649,86 @@ function initPageProgressBar() {
                 z-index: 999999;
                 width: 0%;
                 opacity: 0;
-                transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+                transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
                 pointer-events: none;
                 box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+            }
+            main.page-content.is-loading-content {
+                opacity: 0.58;
+                pointer-events: none;
+                transition: opacity 0.12s ease;
             }
         `;
         document.head.appendChild(style);
     }
 
+    // Intercept programmatic form.submit() for GET filter forms (e.g., onchange="this.form.submit()")
+    if (!HTMLFormElement.prototype.__ajaxPatched) {
+        const origSubmit = HTMLFormElement.prototype.submit;
+        HTMLFormElement.prototype.submit = function () {
+            const method = (this.getAttribute('method') || 'GET').toUpperCase();
+            if (method === 'GET' && !this.hasAttribute('data-no-ajax') && this.getAttribute('target') !== '_blank') {
+                window.navigateFilterForm(this);
+                return;
+            }
+            showProgressBar();
+            return origSubmit.call(this);
+        };
+        HTMLFormElement.prototype.__ajaxPatched = true;
+    }
+
+    // Intercept standard form submit events for GET filter forms
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!form || form.tagName !== 'FORM') return;
+        const method = (form.getAttribute('method') || 'GET').toUpperCase();
+        if (method === 'GET' && !form.hasAttribute('data-no-ajax') && form.getAttribute('target') !== '_blank') {
+            e.preventDefault();
+            window.navigateFilterForm(form);
+        } else {
+            showProgressBar();
+        }
+    });
+
+    // Intercept same-page filter / reset / pagination link clicks for fast AJAX swap
     document.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         const link = e.target.closest('a');
         if (!link) return;
 
         const href = link.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.hasAttribute('download') || link.getAttribute('target') === '_blank') {
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.hasAttribute('download') || link.getAttribute('target') === '_blank' || link.hasAttribute('data-no-ajax')) {
             return;
         }
 
-        // Only trigger for same-domain navigation
-        if (link.origin === window.location.origin && link.pathname !== window.location.pathname) {
-            progressBar.style.opacity = '1';
-            progressBar.style.width = '35%';
-            setTimeout(() => { progressBar.style.width = '70%'; }, 150);
-            setTimeout(() => { progressBar.style.width = '88%'; }, 400);
+        if (link.origin === window.location.origin) {
+            const isExportOrPrint = link.pathname.endsWith('/export') || link.pathname.endsWith('/print') || link.pathname.includes('/slip');
+            if (isExportOrPrint) return;
+
+            // If same pathname (e.g. changing month/term/status tab, reset filter, or pagination), swap via AJAX!
+            if (link.pathname === window.location.pathname) {
+                e.preventDefault();
+                window.navigateFilterUrl(link.href);
+                return;
+            }
+
+            // Cross-page navigation: show instant progress bar
+            showProgressBar();
         }
     });
 
-    window.addEventListener('pageshow', function () {
-        if (progressBar) {
-            progressBar.style.width = '100%';
-            setTimeout(() => {
-                progressBar.style.opacity = '0';
-                setTimeout(() => { progressBar.style.width = '0%'; }, 250);
-            }, 100);
-        }
+    // Handle browser back/forward button for AJAX-swapped filter states
+    window.addEventListener('popstate', function () {
+        window.navigateFilterUrl(window.location.href, false);
     });
+
+    window.addEventListener('pageshow', function () {
+        hideProgressBar();
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPageProgressBar);
+} else {
+    initPageProgressBar();
 }

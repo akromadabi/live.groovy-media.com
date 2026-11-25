@@ -95,7 +95,7 @@
 
                 <hr style="border-color: var(--border); margin: 1.5rem 0;">
 
-                <h4 class="mb-4">📊 Skema Bonus (Per User)</h4>
+                <h4 class="mb-4">Skema Bonus (Per User)</h4>
                 <div class="alert alert-info" style="margin-bottom: 1.5rem;">
                     <small>Kosongkan untuk menggunakan aturan global. Jika diisi, nilai ini hanya berlaku untuk user
                         ini.</small>

@@ -196,6 +196,42 @@ class MultiPlatformAttendanceAndSalaryTest extends TestCase
         $this->assertEquals(1, Attendance::where('user_id', $user->id)->count());
     }
 
+    public function test_user_can_submit_attendance_without_session_name(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'is_active' => true]);
+        $this->actingAs($user);
+
+        $today = now()->toDateString();
+
+        // Submit 1st attendance without session_name
+        $response1 = $this->post(route('user.attendances.store'), [
+            'action' => 'save',
+            'attendance_date' => $today,
+            'platform' => 'tiktok',
+            'live_duration_hours' => 2.0,
+            'sales_count' => 10,
+        ]);
+
+        $response1->assertRedirect(route('user.attendances.index'));
+        $att1 = Attendance::where('user_id', $user->id)->where('platform', 'tiktok')->first();
+        $this->assertNotNull($att1);
+        $this->assertEquals('Sesi 1', $att1->session_name);
+
+        // Submit 2nd attendance for same day & platform without session_name -> auto-assigns Sesi 2
+        $response2 = $this->post(route('user.attendances.store'), [
+            'action' => 'save',
+            'attendance_date' => $today,
+            'platform' => 'tiktok',
+            'live_duration_hours' => 1.5,
+            'sales_count' => 5,
+        ]);
+
+        $response2->assertRedirect(route('user.attendances.index'));
+        $this->assertEquals(2, Attendance::where('user_id', $user->id)->where('platform', 'tiktok')->count());
+        $att2 = Attendance::where('user_id', $user->id)->where('platform', 'tiktok')->orderByDesc('id')->first();
+        $this->assertEquals('Sesi 2', $att2->session_name);
+    }
+
     public function test_save_and_next_action_redirects_with_params(): void
     {
         $user = User::factory()->create(['role' => 'user', 'is_active' => true]);

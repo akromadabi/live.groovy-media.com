@@ -236,7 +236,7 @@
 
             @if(request()->hasAny(['search', 'status', 'task']))
                 <a href="{{ route('admin.users.index') }}" class="btn btn-secondary btn-sm users-btn-reset">
-                    ✕ Reset
+                    Reset
                 </a>
             @endif
         </form>

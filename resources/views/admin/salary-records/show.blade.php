@@ -151,11 +151,10 @@
                         <span class="slip-label">Target <span
                                 style="font-weight: 600;">{{ $monthlyHours }}/{{ $monthlyTarget }} jam</span></span>
                         @if($salaryRecord->target_met)
-                            <span class="status-badge paid" style="font-size: 11px; padding: 3px 10px;">✓ Tercapai</span>
+                            <span class="status-badge paid" style="font-size: 11px; padding: 3px 10px;">Tercapai</span>
                         @else
                             <span
-                                style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(239, 68, 68, 0.3); color: #fca5a5;">✗
-                                Belum</span>
+                                style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(239, 68, 68, 0.3); color: #fca5a5;">Belum</span>
                         @endif
                     </div>
                 </div>
@@ -171,7 +170,7 @@
 
                 <div class="slip-status">
                     @if($salaryRecord->status === 'paid')
-                        <span class="status-badge paid">✓ DIBAYAR</span>
+                        <span class="status-badge paid">DIBAYAR</span>
                         @if($salaryRecord->paid_at)
                             <span class="status-date">{{ $salaryRecord->paid_at->format('d M Y') }}</span>
                         @endif

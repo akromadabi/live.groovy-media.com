@@ -195,7 +195,7 @@
                                 @if(abs($totalDiff) < 10)
                                     {{-- Difference less than 10 minutes = Green checkmark --}}
                                     <span class="badge badge-success badge-sm tooltip-badge"
-                                        data-tooltip="Sesuai ({{ $formatDuration(abs($totalDiff)) }})">✓</span>
+                                        data-tooltip="Sesuai ({{ $formatDuration(abs($totalDiff)) }})">Sesuai</span>
                                 @elseif($totalDiff >= 10)
                                     {{-- TikTok > Absen = Up arrow (blue) --}}
                                     <span class="badge badge-sm tooltip-badge" data-tooltip="TikTok +{{ $formatDuration($totalDiff) }}"

@@ -240,7 +240,7 @@
 
                 <hr style="border-color: var(--border); margin: 1rem 0;">
 
-                <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.35rem;">📊 Skema Bonus Khusus (Opsional)</h4>
+                <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.35rem;">Skema Bonus Khusus (Opsional)</h4>
                 <div class="alert alert-info mb-3" style="padding: 0.5rem 0.75rem; font-size: 0.78rem; border-radius: 6px;">
                     Kosongkan field jika ingin mengikuti aturan global. Nilai yang diisi hanya berlaku untuk pengguna ini.
                 </div>

@@ -46,6 +46,12 @@ class PerformanceService
             $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->toDateString();
             $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->toDateString();
             $filterLabel = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->translatedFormat('F Y');
+        } elseif ($selectedMonth) {
+            $selectedYear = (string) now()->year;
+            $period = 'custom';
+            $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth()->toDateString();
+            $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->toDateString();
+            $filterLabel = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->translatedFormat('F Y');
         } elseif ($selectedYear) {
             $period = 'custom';
             $startDate = Carbon::createFromDate($selectedYear, 1, 1)->startOfYear()->toDateString();

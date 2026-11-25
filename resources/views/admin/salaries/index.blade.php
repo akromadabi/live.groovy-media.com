@@ -77,7 +77,7 @@
                     <div class="salary-record-details">
                         <span>{{ $salary->total_hours }} jam</span>
                         @if($salary->target_met)
-                            <span class="badge badge-success badge-sm" style="font-size: 0.6rem;">Target ✓</span>
+                            <span class="badge badge-success badge-sm" style="font-size: 0.6rem;">Tercapai</span>
                         @endif
                     </div>
                 </div>

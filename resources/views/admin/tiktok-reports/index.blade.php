@@ -241,7 +241,7 @@
                         <div id="selected-files-list" style="margin-top: 0.75rem; display: none;">
                             <div
                                 style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--primary-color, #4f46e5);">
-                                📎 <span id="file-count">0</span> file dipilih:
+                                <span id="file-count">0</span> file dipilih:
                             </div>
                             <div id="file-names" style="font-size: 0.8rem; max-height: 150px; overflow-y: auto;"></div>
                         </div>
@@ -249,7 +249,7 @@
                     
                     <!-- Clean Format File Listing (Hapus Box Alert) -->
                     <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color, #eee); padding-top: 1rem; font-size: 0.85rem;">
-                        <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-color, #1e293b);">📌 Format File:</strong>
+                        <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-color, #1e293b);">Format File:</strong>
                         <div style="opacity: 0.8; line-height: 1.6; color: var(--text-color, #475569);">
                             File harus memiliki kolom:
                             <ul style="margin: 0.35rem 0 0 1.25rem; padding: 0; list-style-type: disc;">
@@ -382,7 +382,7 @@
                     for (let i = 0; i < files.length; i++) {
                         const div = document.createElement('div');
                         div.style.cssText = 'padding: 0.35rem 0.6rem; background: var(--card-bg, #f0f0f0); border-radius: 6px; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem;';
-                        div.innerHTML = '<span style="color: #22c55e;">📄</span> ' + files[i].name +
+                        div.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14" style="color: #10b981; flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> ' + files[i].name +
                             ' <span style="opacity:0.5; font-size:0.75rem;">(' + (files[i].size / 1024).toFixed(0) + ' KB)</span>';
                         fileNames.appendChild(div);
                     }

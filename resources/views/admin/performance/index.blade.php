@@ -827,26 +827,30 @@
             <!-- Category Segmented Control -->
             <div class="perf-segment-nav">
                 <a href="{{ route('admin.performance.index', array_merge(request()->all(), ['category' => 'overall'])) }}"
+                   data-category="overall" onclick="return switchPerfCategory('overall', event)"
                    class="perf-segment-item {{ $category === 'overall' ? 'active' : '' }}">
                     Skor Keseluruhan
                 </a>
                 <a href="{{ route('admin.performance.index', array_merge(request()->all(), ['category' => 'duration'])) }}"
+                   data-category="duration" onclick="return switchPerfCategory('duration', event)"
                    class="perf-segment-item {{ $category === 'duration' ? 'active' : '' }}">
                     Durasi Live
                 </a>
                 <a href="{{ route('admin.performance.index', array_merge(request()->all(), ['category' => 'sales'])) }}"
+                   data-category="sales" onclick="return switchPerfCategory('sales', event)"
                    class="perf-segment-item {{ $category === 'sales' ? 'active' : '' }}">
                     Penjualan
                 </a>
                 <a href="{{ route('admin.performance.index', array_merge(request()->all(), ['category' => 'content'])) }}"
+                   data-category="content" onclick="return switchPerfCategory('content', event)"
                    class="perf-segment-item {{ $category === 'content' ? 'active' : '' }}">
                     Konten
                 </a>
             </div>
 
             <!-- Single Line Filters (Desktop) / Symmetrical Grid (Mobile) -->
-            <form action="{{ route('admin.performance.index') }}" method="GET" class="perf-filter-form">
-                <input type="hidden" name="category" value="{{ $category }}">
+            <form action="{{ route('admin.performance.index') }}" method="GET" class="perf-filter-form" id="perfFilterForm">
+                <input type="hidden" name="category" id="perfCategoryInput" value="{{ $category }}">
 
                 <!-- Search Input -->
                 <div class="perf-search-wrap">
@@ -855,7 +859,10 @@
 
                 <div class="perf-selects-row">
                     <!-- Periode Presets Dropdown -->
-                    <select name="period" class="form-control form-select perf-select perf-select-period" onchange="this.form.submit()">
+                    <select name="period" class="form-control form-select perf-select perf-select-period" onchange="onPerfPeriodChange(this)">
+                        @if($period === 'custom')
+                            <option value="custom" selected disabled>Filter Bulan/Tahun</option>
+                        @endif
                         <option value="all" {{ $period === 'all' ? 'selected' : '' }}>Semua Waktu</option>
                         <option value="this_month" {{ $period === 'this_month' ? 'selected' : '' }}>Bulan Ini</option>
                         <option value="last_month" {{ $period === 'last_month' ? 'selected' : '' }}>Bulan Lalu</option>
@@ -864,7 +871,7 @@
                     </select>
 
                     <!-- Month / Year Selector -->
-                    <select name="month" class="form-control form-select perf-select perf-select-month" onchange="this.form.submit()">
+                    <select name="month" class="form-control form-select perf-select perf-select-month" onchange="onPerfMonthYearChange(this)">
                         <option value="">Bulan</option>
                         @for($m = 1; $m <= 12; $m++)
                             <option value="{{ $m }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
@@ -873,7 +880,7 @@
                         @endfor
                     </select>
 
-                    <select name="year" class="form-control form-select perf-select perf-select-year" onchange="this.form.submit()">
+                    <select name="year" class="form-control form-select perf-select perf-select-year" onchange="onPerfMonthYearChange(this)">
                         <option value="">Tahun</option>
                         @for($y = now()->year; $y >= 2024; $y--)
                             <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
@@ -981,7 +988,7 @@
         <div class="card-header flex justify-between items-center" style="padding: 0.75rem 1rem;">
             <div>
                 <h3 class="card-title" style="font-size: 0.95rem; margin: 0;">Peringkat Host</h3>
-                <span class="text-xs text-muted">{{ $filterLabel }} &bull; Urutan: {{ ucfirst($category) }}</span>
+                <span class="text-xs text-muted">{{ $filterLabel }} &bull; Urutan: <span class="perf-cat-label">{{ ucfirst($category) }}</span></span>
             </div>
             <span class="badge badge-secondary" style="font-size: 0.75rem;">{{ $leaderboard->count() }} Host</span>
         </div>
@@ -999,9 +1006,15 @@
                         <th style="width: 80px; text-align: center;">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="desktopLeaderboardBody">
                     @forelse($leaderboard as $item)
-                        <tr class="host-row" data-name="{{ strtolower($item['name']) }}">
+                        <tr class="host-row"
+                            data-user-id="{{ $item['user_id'] }}"
+                            data-name="{{ strtolower($item['name']) }}"
+                            data-overall="{{ $item['overall_score'] }}"
+                            data-minutes="{{ $item['total_minutes'] }}"
+                            data-sales="{{ $item['total_sales'] }}"
+                            data-content="{{ $item['total_content'] }}">
                             <!-- Rank Number -->
                             <td style="text-align: center;">
                                 <span class="rank-num {{ $item['rank'] <= 3 ? 'rank-' . $item['rank'] : '' }}">
@@ -1090,14 +1103,20 @@
         <div class="card-header flex justify-between items-center" style="padding: 0.65rem 0.75rem;">
             <div>
                 <h3 class="card-title" style="font-size: 0.9rem; margin: 0;">Peringkat Host</h3>
-                <span class="text-xs text-muted">{{ $filterLabel }} &bull; {{ ucfirst($category) }}</span>
+                <span class="text-xs text-muted">{{ $filterLabel }} &bull; <span class="perf-cat-label">{{ ucfirst($category) }}</span></span>
             </div>
             <span class="badge badge-secondary" style="font-size: 0.72rem;">{{ $leaderboard->count() }} Host</span>
         </div>
 
-        <div style="padding: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+        <div id="mobileLeaderboardBody" style="padding: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
             @forelse($leaderboard as $item)
-                <div class="perf-mobile-card host-row" data-name="{{ strtolower($item['name']) }}">
+                <div class="perf-mobile-card host-row"
+                     data-user-id="{{ $item['user_id'] }}"
+                     data-name="{{ strtolower($item['name']) }}"
+                     data-overall="{{ $item['overall_score'] }}"
+                     data-minutes="{{ $item['total_minutes'] }}"
+                     data-sales="{{ $item['total_sales'] }}"
+                     data-content="{{ $item['total_content'] }}">
                     <div class="perf-mobile-card-top">
                         <div class="flex items-center gap-2" style="min-width: 0;">
                             <span class="rank-num {{ $item['rank'] <= 3 ? 'rank-' . $item['rank'] : '' }}" style="flex-shrink: 0;">
@@ -1275,6 +1294,180 @@
 
 @push('scripts')
 <script>
+    // Leaderboard data in memory for 0ms instant category switching
+    window.__perfHostsData = @json($leaderboard->map(fn($item) => collect($item)->except(['user'])->all())->values());
+
+    function onPerfPeriodChange(selectEl) {
+        const form = selectEl.form;
+        if (!form) return;
+        const monthEl = form.querySelector('[name="month"]');
+        const yearEl = form.querySelector('[name="year"]');
+        if (monthEl) monthEl.value = '';
+        if (yearEl) yearEl.value = '';
+        if (window.navigateFilterForm) {
+            window.navigateFilterForm(form);
+        } else {
+            form.submit();
+        }
+    }
+
+    function onPerfMonthYearChange(selectEl) {
+        const form = selectEl.form;
+        if (!form) return;
+        const monthEl = form.querySelector('[name="month"]');
+        const yearEl = form.querySelector('[name="year"]');
+        if (monthEl && monthEl.value && yearEl && !yearEl.value) {
+            yearEl.value = '{{ now()->year }}';
+        }
+        if (window.navigateFilterForm) {
+            window.navigateFilterForm(form);
+        } else {
+            form.submit();
+        }
+    }
+
+    function compareHostsByCategory(a, b, category) {
+        if (category === 'duration') {
+            if (b.total_minutes !== a.total_minutes) return b.total_minutes - a.total_minutes;
+            return b.total_sales - a.total_sales;
+        } else if (category === 'sales') {
+            if (b.total_sales !== a.total_sales) return b.total_sales - a.total_sales;
+            return b.total_minutes - a.total_minutes;
+        } else if (category === 'content') {
+            if (b.total_content !== a.total_content) return b.total_content - a.total_content;
+            return b.total_sales - a.total_sales;
+        } else {
+            if (b.overall_score !== a.overall_score) return b.overall_score - a.overall_score;
+            return b.total_sales - a.total_sales;
+        }
+    }
+
+    function switchPerfCategory(category, event) {
+        if (event) {
+            event.preventDefault();
+        }
+
+        // 1. Update active tab pill immediately
+        document.querySelectorAll('.perf-segment-item').forEach(tab => {
+            tab.classList.toggle('active', tab.getAttribute('data-category') === category);
+        });
+
+        // 2. Update hidden form input & category label
+        const catInput = document.getElementById('perfCategoryInput');
+        if (catInput) catInput.value = category;
+
+        const catLabel = category.charAt(0).toUpperCase() + category.slice(1);
+        document.querySelectorAll('.perf-cat-label').forEach(el => {
+            el.textContent = catLabel;
+        });
+
+        // 3. Sort desktop table rows & re-assign rank badges
+        const desktopBody = document.getElementById('desktopLeaderboardBody');
+        if (desktopBody) {
+            const rows = Array.from(desktopBody.querySelectorAll('tr.host-row'));
+            rows.sort((rA, rB) => {
+                const a = {
+                    overall_score: parseFloat(rA.dataset.overall || 0),
+                    total_minutes: parseInt(rA.dataset.minutes || 0, 10),
+                    total_sales: parseInt(rA.dataset.sales || 0, 10),
+                    total_content: parseInt(rA.dataset.content || 0, 10),
+                };
+                const b = {
+                    overall_score: parseFloat(rB.dataset.overall || 0),
+                    total_minutes: parseInt(rB.dataset.minutes || 0, 10),
+                    total_sales: parseInt(rB.dataset.sales || 0, 10),
+                    total_content: parseInt(rB.dataset.content || 0, 10),
+                };
+                return compareHostsByCategory(a, b, category);
+            });
+            rows.forEach((row, idx) => {
+                const rank = idx + 1;
+                const badge = row.querySelector('.rank-num');
+                if (badge) {
+                    badge.textContent = rank;
+                    badge.className = 'rank-num' + (rank <= 3 ? ' rank-' + rank : '');
+                }
+                desktopBody.appendChild(row);
+            });
+        }
+
+        // 4. Sort mobile cards & re-assign rank badges
+        const mobileBody = document.getElementById('mobileLeaderboardBody');
+        if (mobileBody) {
+            const cards = Array.from(mobileBody.querySelectorAll('.perf-mobile-card.host-row'));
+            cards.sort((cA, cB) => {
+                const a = {
+                    overall_score: parseFloat(cA.dataset.overall || 0),
+                    total_minutes: parseInt(cA.dataset.minutes || 0, 10),
+                    total_sales: parseInt(cA.dataset.sales || 0, 10),
+                    total_content: parseInt(cA.dataset.content || 0, 10),
+                };
+                const b = {
+                    overall_score: parseFloat(cB.dataset.overall || 0),
+                    total_minutes: parseInt(cB.dataset.minutes || 0, 10),
+                    total_sales: parseInt(cB.dataset.sales || 0, 10),
+                    total_content: parseInt(cB.dataset.content || 0, 10),
+                };
+                return compareHostsByCategory(a, b, category);
+            });
+            cards.forEach((card, idx) => {
+                const rank = idx + 1;
+                const badge = card.querySelector('.rank-num');
+                if (badge) {
+                    badge.textContent = rank;
+                    badge.className = 'rank-num' + (rank <= 3 ? ' rank-' + rank : '');
+                }
+                mobileBody.appendChild(card);
+            });
+        }
+
+        // 5. Update Top 3 Podium Cards & Chart from sorted data
+        if (Array.isArray(window.__perfHostsData) && window.__perfHostsData.length > 0) {
+            const sorted = [...window.__perfHostsData].sort((a, b) => compareHostsByCategory(a, b, category));
+
+            // Update Top 3 Podium cards
+            const podiumCards = document.querySelectorAll('.top3-grid .top3-card');
+            sorted.slice(0, 3).forEach((host, idx) => {
+                const card = podiumCards[idx];
+                if (!card) return;
+                const scoreSpan = card.querySelector('.flex.items-center.justify-between span:last-child');
+                if (scoreSpan) scoreSpan.textContent = `Skor ${host.overall_score}/100`;
+                const avatarEl = card.querySelector('.avatar');
+                if (avatarEl) avatarEl.textContent = (host.name || '?').substring(0, 1);
+                const nameEl = card.querySelector('.font-bold.text-sm.truncate');
+                if (nameEl) nameEl.textContent = host.name;
+                const metaEl = card.querySelector('.text-xs.text-muted');
+                if (metaEl) metaEl.textContent = `${host.task} • ${host.sessions_count} sesi`;
+                const metaSpans = card.querySelectorAll('.top3-meta-row > span');
+                if (metaSpans[0]) metaSpans[0].innerHTML = `<strong>${host.total_hours}j</strong> live`;
+                if (metaSpans[1]) metaSpans[1].innerHTML = `<strong>${Number(host.total_sales).toLocaleString()}</strong> sales`;
+                if (metaSpans[2]) metaSpans[2].innerHTML = `<strong>${host.total_content}</strong> konten`;
+                const detailBtn = card.querySelector('.top3-meta-row button');
+                if (detailBtn) detailBtn.setAttribute('onclick', `showUserDetail(${host.user_id})`);
+            });
+
+            // Update Chart top 7
+            const top7 = sorted.slice(0, 7);
+            const chartInstance = window.Chart && document.getElementById('topPerformersChart')
+                ? Chart.getChart(document.getElementById('topPerformersChart'))
+                : null;
+            if (chartInstance) {
+                chartInstance.data.labels = top7.map(h => h.name);
+                chartInstance.data.datasets[0].data = top7.map(h => h.total_hours);
+                chartInstance.data.datasets[1].data = top7.map(h => h.total_sales);
+                chartInstance.data.datasets[2].data = top7.map(h => h.total_content);
+                chartInstance.update('none');
+            }
+        }
+
+        // 6. Update URL query parameter without reloading
+        const url = new URL(window.location.href);
+        url.searchParams.set('category', category);
+        window.history.replaceState({}, '', url.toString());
+
+        return false;
+    }
+
     // Real-time Search in Leaderboard Table
     document.getElementById('hostTableSearch')?.addEventListener('input', function (e) {
         const query = e.target.value.toLowerCase().trim();
@@ -1295,7 +1488,8 @@
         const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
 
         const ctxPerformer = document.getElementById('topPerformersChart');
-        if (ctxPerformer && chartData.labels.length > 0) {
+        if (ctxPerformer && chartData.labels.length > 0 && window.Chart) {
+            Chart.getChart(ctxPerformer)?.destroy();
             new Chart(ctxPerformer, {
                 type: 'bar',
                 data: {

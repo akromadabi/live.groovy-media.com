@@ -350,7 +350,7 @@
                             <td>
                                 @if($totalTiktok > 0)
                                     @if(abs($totalDiff) < 10)
-                                        <span class="badge badge-success badge-sm" title="Sesuai ({{ $formatDuration(abs($totalDiff)) }})">✓ Sesuai</span>
+                                        <span class="badge badge-success badge-sm" title="Sesuai ({{ $formatDuration(abs($totalDiff)) }})">Sesuai</span>
                                     @elseif($totalDiff >= 10)
                                         <span class="badge badge-sm" style="background: #3b82f6; color: white;" title="TikTok +{{ $formatDuration($totalDiff) }}">↑ TT +{{ $formatDuration($totalDiff) }}</span>
                                     @else
@@ -466,7 +466,7 @@
                         <div style="display: flex; align-items: center; gap: 0.35rem; justify-content: flex-end;">
                             @if($totalTiktok > 0)
                                 @if(abs($totalDiff) < 10)
-                                    <span class="badge badge-success badge-sm" title="Sesuai">✓</span>
+                                    <span class="badge badge-success badge-sm" title="Sesuai">Sesuai</span>
                                 @elseif($totalDiff >= 10)
                                     <span class="badge badge-sm" data-tooltip="TikTok +{{ $formatDuration($totalDiff) }}" style="background: #3b82f6; color: white;">↑</span>
                                 @else

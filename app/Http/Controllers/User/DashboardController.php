@@ -44,28 +44,55 @@ class DashboardController extends Controller
             $filterLabel = Carbon::create($selectedYear, $selectedMonth, 1)->translatedFormat('F Y');
         }
 
-        // Get filtered statistics
-        $filteredQuery = $user->attendances();
+        // Single aggregate query for all-time user stats
+        $allTimeStats = $user->attendances()
+            ->selectRaw('
+                COUNT(*) as total_live,
+                COALESCE(SUM(live_duration_minutes), 0) as total_minutes,
+                COALESCE(SUM(sales_count), 0) as total_sales,
+                COALESCE(SUM(content_edit_count), 0) as total_content_edit,
+                COALESCE(SUM(content_live_count), 0) as total_content_live
+            ')
+            ->first();
+
         if ($startDate && $endDate) {
-            $filteredQuery = $filteredQuery->whereBetween('attendance_date', [$startDate, $endDate]);
+            $filteredStats = $user->attendances()
+                ->whereBetween('attendance_date', [$startDate->toDateString(), $endDate->toDateString()])
+                ->selectRaw('
+                    COALESCE(SUM(live_duration_minutes), 0) as total_minutes,
+                    COALESCE(SUM(sales_count), 0) as total_sales,
+                    COALESCE(SUM(content_edit_count), 0) as total_content_edit,
+                    COALESCE(SUM(content_live_count), 0) as total_content_live
+                ')
+                ->first();
+        } else {
+            $filteredStats = $allTimeStats;
         }
-        $filteredAttendances = $filteredQuery->get();
 
         $stats = [
-            'total_live' => $user->attendances()->count(),
-            'total_hours' => round($user->attendances()->sum('live_duration_minutes') / 60, 1),
+            'total_live' => (int) ($allTimeStats->total_live ?? 0),
+            'total_hours' => round(($allTimeStats->total_minutes ?? 0) / 60, 1),
             'estimated_salary' => $this->calculatePendingSalary($user),
-            'this_month_hours' => round($filteredAttendances->sum('live_duration_minutes') / 60, 1),
-            'this_month_sales' => $filteredAttendances->sum('sales_count'),
-            'this_month_content_edit' => $filteredAttendances->sum('content_edit_count'),
-            'this_month_content_live' => $filteredAttendances->sum('content_live_count'),
+            'this_month_hours' => round(($filteredStats->total_minutes ?? 0) / 60, 1),
+            'this_month_sales' => (int) ($filteredStats->total_sales ?? 0),
+            'this_month_content_edit' => (int) ($filteredStats->total_content_edit ?? 0),
+            'this_month_content_live' => (int) ($filteredStats->total_content_live ?? 0),
         ];
 
-        // Calculate T1/T2 for selected month (use current month if no filter)
+        // Calculate T1/T2 and target achievement for selected month (use current month if no filter)
         $termYear = $selectedYear ?: now()->year;
         $termMonth = $selectedMonth ?: now()->month;
         $scheme = $user->salaryScheme;
-        $termData = $this->calculateTermData($user, $scheme, $termYear, $termMonth);
+
+        $targetMonthStart = Carbon::createFromDate($termYear, $termMonth, 1)->startOfDay();
+        $targetMonthEnd = $targetMonthStart->copy()->endOfMonth();
+
+        // Single query for the target month attendances (used for T1, T2, targets, platforms, and daily bonus)
+        $targetMonthAttendances = $user->attendances()
+            ->whereBetween('attendance_date', [$targetMonthStart->toDateString(), $targetMonthEnd->toDateString()])
+            ->get();
+
+        $termData = $this->calculateTermDataFromCollection($targetMonthAttendances, $scheme, $termYear, $termMonth);
 
         // Recent attendances
         $recentAttendances = $user->attendances()
@@ -118,18 +145,13 @@ class DashboardController extends Controller
             ->sortByDesc('sales')
             ->values();
 
-        // Calculate target achievement data for the selected/current month
-        $targetMonth = $selectedMonth ?: now()->month;
-        $targetYear = $selectedYear ?: now()->year;
-        $endDay = \Carbon\Carbon::createFromDate($targetYear, $targetMonth, 1)->endOfMonth()->day;
+        // Calculate target achievement data for the selected/current month from $targetMonthAttendances
+        $targetMonth = $termMonth;
+        $targetYear = $termYear;
+        $endDay = $targetMonthEnd->day;
 
-        // Get monthly hours for target comparison
-        $targetMonthStart = \Carbon\Carbon::createFromDate($targetYear, $targetMonth, 1)->startOfDay();
-        $targetMonthEnd = $targetMonthStart->copy()->endOfMonth();
-        $targetMonthMinutes = Attendance::where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'validated'])
-            ->whereBetween('attendance_date', [$targetMonthStart, $targetMonthEnd])
-            ->sum('live_duration_minutes');
+        $validTargetAttendances = $targetMonthAttendances->whereIn('status', ['pending', 'validated']);
+        $targetMonthMinutes = $validTargetAttendances->sum('live_duration_minutes');
         $monthlyHours = round($targetMonthMinutes / 60, 1);
 
         // Active marketplaces & dynamic per-platform target calculations
@@ -151,14 +173,12 @@ class DashboardController extends Controller
             }
         }
 
-        // Get monthly attendances for target month grouped by platform
-        $monthAttendancesByPlatform = Attendance::where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'validated'])
-            ->whereBetween('attendance_date', [$targetMonthStart, $targetMonthEnd])
-            ->selectRaw('platform, SUM(live_duration_minutes) as total_minutes')
-            ->groupBy('platform')
-            ->pluck('total_minutes', 'platform')
-            ->all();
+        // Group monthly attendances by platform in memory
+        $monthAttendancesByPlatform = [];
+        foreach ($validTargetAttendances as $vAtt) {
+            $pKey = $vAtt->platform ?? 'tiktok';
+            $monthAttendancesByPlatform[$pKey] = ($monthAttendancesByPlatform[$pKey] ?? 0) + $vAtt->live_duration_minutes;
+        }
 
         if ($hasCustomPlatformTargets) {
             $totalPlatformTarget = 0;
@@ -187,20 +207,19 @@ class DashboardController extends Controller
             $monthlyTarget = $scheme ? $scheme->calculateMonthlyTarget($targetYear, $targetMonth) : 0;
         }
 
-        // Calculate bonus (always calculate for display, regardless of target met)
+        // Calculate bonus in memory (always calculate for display, regardless of target met)
         $monthlyBonus = 0;
         if ($scheme) {
-            $dailySales = Attendance::where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'validated'])
-                ->whereBetween('attendance_date', [$targetMonthStart, $targetMonthEnd])
-                ->selectRaw('DATE(attendance_date) as date, SUM(sales_count) as total_sales')
-                ->groupBy('date')
-                ->get();
+            $dailySalesMap = [];
+            foreach ($validTargetAttendances as $vAtt) {
+                $dStr = $vAtt->attendance_date->toDateString();
+                $dailySalesMap[$dStr] = ($dailySalesMap[$dStr] ?? 0) + (int) $vAtt->sales_count;
+            }
 
             $userThreshold = $scheme->bonus_pcs_threshold;
             $userBonusAmt = $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : null;
-            foreach ($dailySales as $day) {
-                $monthlyBonus += \App\Models\BonusTier::getBonusForSales((int) $day->total_sales, $userThreshold, $userBonusAmt);
+            foreach ($dailySalesMap as $totalSalesForDay) {
+                $monthlyBonus += \App\Models\BonusTier::getBonusForSales($totalSalesForDay, $userThreshold, $userBonusAmt);
             }
         }
 
@@ -253,28 +272,15 @@ class DashboardController extends Controller
     }
 
     /**
-     * Calculate T1 and T2 data for specified month
+     * Calculate T1 and T2 data in memory from already fetched month attendances
      */
-    private function calculateTermData($user, $scheme, $year = null, $month = null)
+    private function calculateTermDataFromCollection($monthAttendances, $scheme, $year = null, $month = null)
     {
         $year = $year ?? now()->year;
         $month = $month ?? now()->month;
 
-        // T1: 1-15
-        $t1Start = Carbon::create($year, $month, 1);
-        $t1End = Carbon::create($year, $month, 15);
-
-        // T2: 16-end of month
-        $t2Start = Carbon::create($year, $month, 16);
-        $t2End = Carbon::create($year, $month, 1)->endOfMonth();
-
-        $t1Attendances = $user->attendances()
-            ->whereBetween('attendance_date', [$t1Start, $t1End])
-            ->get();
-
-        $t2Attendances = $user->attendances()
-            ->whereBetween('attendance_date', [$t2Start, $t2End])
-            ->get();
+        $t1Attendances = $monthAttendances->filter(fn($a) => (int) $a->attendance_date->day <= 15);
+        $t2Attendances = $monthAttendances->filter(fn($a) => (int) $a->attendance_date->day >= 16);
 
         $t1Hours = round($t1Attendances->sum('live_duration_minutes') / 60, 1);
         $t2Hours = round($t2Attendances->sum('live_duration_minutes') / 60, 1);
@@ -283,7 +289,6 @@ class DashboardController extends Controller
         $t2Salary = 0;
 
         if ($scheme) {
-            // Calculate base salary for T1
             foreach ($t1Attendances as $a) {
                 $hours = $a->live_duration_minutes / 60;
                 $plat = $a->platform ?? 'tiktok';
@@ -292,7 +297,6 @@ class DashboardController extends Controller
                 $t1Salary += ($a->content_live_count ?? 0) * $scheme->getContentLiveRateForPlatform($plat);
             }
 
-            // Calculate base salary for T2
             foreach ($t2Attendances as $a) {
                 $hours = $a->live_duration_minutes / 60;
                 $plat = $a->platform ?? 'tiktok';
@@ -301,22 +305,15 @@ class DashboardController extends Controller
                 $t2Salary += ($a->content_live_count ?? 0) * $scheme->getContentLiveRateForPlatform($plat);
             }
 
-            // T1: no bonus (month not finished yet)
-            // T2: check full month hours (T1+T2) against monthly target
             $fullMonthHours = $t1Hours + $t2Hours;
             $monthlyTarget = $scheme->calculateMonthlyTarget($year, $month);
             $targetMet = $fullMonthHours >= $monthlyTarget;
 
             if ($targetMet) {
-                // Bonus from entire month's sales goes to T2
-                $allAttendances = $t1Attendances->merge($t2Attendances);
                 $dailySales = [];
-                foreach ($allAttendances as $a) {
+                foreach ($monthAttendances as $a) {
                     $date = $a->attendance_date->toDateString();
-                    if (!isset($dailySales[$date])) {
-                        $dailySales[$date] = 0;
-                    }
-                    $dailySales[$date] += $a->sales_count;
+                    $dailySales[$date] = ($dailySales[$date] ?? 0) + $a->sales_count;
                 }
                 $userThreshold = $scheme->bonus_pcs_threshold;
                 $userBonusAmount = $scheme->bonus_amount !== null ? (float) $scheme->bonus_amount : null;

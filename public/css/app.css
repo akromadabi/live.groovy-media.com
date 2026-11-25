@@ -3645,6 +3645,59 @@ a:hover {
     }
 }
 
+/* Global Top Header Alignment & Back Button Polish */
+.header-title {
+    margin: 0 !important;
+    line-height: 1.25 !important;
+    display: flex;
+    align-items: center;
+}
+
+.header-back-btn {
+    height: 32px !important;
+    padding: 0 0.65rem !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.35rem !important;
+    text-decoration: none !important;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    line-height: 1 !important;
+}
+
+.header-back-btn:hover {
+    background: var(--border) !important;
+    color: var(--primary) !important;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem !important;
+}
+
+.header-right .theme-toggle {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+}
+
+.header-right .dropdown-trigger {
+    height: 32px !important;
+    padding: 0 0.6rem !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+}
+
 /* 2. Global Mobile Polish (<= 768px) */
 @media (max-width: 768px) {
     :root {
@@ -3655,6 +3708,10 @@ a:hover {
     .header {
         height: 48px !important;
         padding: 0 0.75rem !important;
+    }
+
+    .main-content {
+        padding-top: 48px !important;
     }
 
     .page-content {

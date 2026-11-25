@@ -797,7 +797,7 @@
                                     @endphp
                                     @if(abs($diff) <= 15)
                                         <span class="badge badge-success badge-xs" title="Durasi cocok dengan data TikTok (selisih {{ $diff >= 0 ? '+' : '' }}{{ $diff }}m)">
-                                            ✓ Cocok
+                                            Cocok
                                         </span>
                                     @elseif($diff > 15)
                                         <span class="badge badge-danger badge-xs" style="background: #ef4444; color: #fff; font-weight: 600;" title="Klaim host melebihi data TikTok! (Klaim: {{ $attendance->formatted_duration }} vs TikTok: {{ round($tt['total_duration']/60, 1) }} jam)">
@@ -967,7 +967,7 @@
                                     $diff = $attendance->live_duration_minutes - $tt['total_duration'];
                                 @endphp
                                 @if(abs($diff) <= 15)
-                                    <span class="badge badge-success badge-xs">✓ Sesuai TT</span>
+                                    <span class="badge badge-success badge-xs">Sesuai TT</span>
                                 @elseif($diff > 15)
                                     <span class="badge badge-danger badge-xs" style="background: #ef4444; color: #fff; font-weight: 600;">
                                         Selisih +{{ round($diff / 60, 1) }}j

@@ -106,7 +106,7 @@ class WhatsAppService
                 'api_key' => $this->apiKey,
                 'sender' => $this->senderNumber,
                 'number' => $this->formatPhone($testPhone),
-                'message' => '✅ Test koneksi WhatsApp berhasil dari TikTok Live Manager',
+                'message' => 'Test koneksi WhatsApp berhasil dari TikTok Live Manager',
             ]);
 
             $result = $response->json();

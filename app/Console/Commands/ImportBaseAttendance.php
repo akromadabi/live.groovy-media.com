@@ -37,13 +37,13 @@ class ImportBaseAttendance extends Command
             return Command::FAILURE;
         }
 
-        $this->info("📊 Loading Excel file: {$file}");
+        $this->info("Loading Excel file: {$file}");
 
         $spreadsheet = IOFactory::load($file);
         $sheet = $spreadsheet->getActiveSheet();
         $highestRow = $sheet->getHighestRow();
 
-        $this->info("📝 Found " . ($highestRow - 1) . " rows to import");
+        $this->info("Found " . ($highestRow - 1) . " rows to import");
 
         $imported = 0;
         $skipped = 0;
@@ -135,7 +135,7 @@ class ImportBaseAttendance extends Command
         $bar->finish();
         $this->newLine(2);
 
-        $this->info("✅ Import completed!");
+        $this->info("Import completed!");
         $this->table(
             ['Metric', 'Count'],
             [

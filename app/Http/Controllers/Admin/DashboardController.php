@@ -51,10 +51,12 @@ class DashboardController extends Controller
             $salaryQuery->whereBetween('period_start', [$startDate, $endDate]);
         }
 
+        $attAgg = $attendanceQuery->selectRaw('COUNT(*) as total_live, COALESCE(SUM(live_duration_minutes), 0) as total_minutes')->first();
+
         $stats = [
             'total_users' => User::where('role', 'user')->count(),
-            'total_live' => $attendanceQuery->count(),
-            'total_hours' => round($attendanceQuery->sum('live_duration_minutes') / 60, 1),
+            'total_live' => (int) ($attAgg->total_live ?? 0),
+            'total_hours' => round(($attAgg->total_minutes ?? 0) / 60, 1),
             'total_salary' => $salaryQuery->sum('total_salary'),
         ];
 

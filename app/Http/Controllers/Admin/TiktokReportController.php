@@ -119,7 +119,7 @@ class TiktokReportController extends Controller
                 $result = $this->processExcelFile($file, $storedFilename, $originalFilename, $allUsers);
                 $successMessages[] = $result;
             } catch (\Exception $e) {
-                $errorMessages[] = "❌ {$originalFilename}: " . $e->getMessage();
+                $errorMessages[] = "{$originalFilename}: " . $e->getMessage();
             }
         }
 
@@ -128,7 +128,7 @@ class TiktokReportController extends Controller
 
         if (!empty($successMessages)) {
             $totalFiles = count($successMessages);
-            $flash = "✅ {$totalFiles} file berhasil diupload:\n" . implode("\n", $successMessages);
+            $flash = "{$totalFiles} file berhasil diupload:\n" . implode("\n", $successMessages);
             $flashMessages['success'] = $flash;
         }
 
@@ -445,7 +445,7 @@ class TiktokReportController extends Controller
         ]);
 
         $newCount = count($newRows);
-        $message = "📄 {$originalFilename}: {$newCount} baris baru diimport";
+        $message = "{$originalFilename}: {$newCount} baris baru diimport";
         if ($duplicateCount > 0) {
             $message .= " (dilewati {$duplicateCount} baris duplikat)";
         }

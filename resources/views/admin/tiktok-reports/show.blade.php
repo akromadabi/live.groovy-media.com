@@ -131,13 +131,13 @@
                                             method="POST">
                                             @csrf
                                             <input type="hidden" name="match_status" value="matched">
-                                            <button type="submit" class="dropdown-item">✓ Cocok</button>
+                                            <button type="submit" class="dropdown-item">Cocok</button>
                                         </form>
                                         <form action="{{ route('admin.tiktok-reports.update-match-status', $detail) }}"
                                             method="POST">
                                             @csrf
                                             <input type="hidden" name="match_status" value="not_matched">
-                                            <button type="submit" class="dropdown-item">✗ Tidak Cocok</button>
+                                            <button type="submit" class="dropdown-item">Tidak Cocok</button>
                                         </form>
                                         <form action="{{ route('admin.tiktok-reports.update-match-status', $detail) }}"
                                             method="POST">

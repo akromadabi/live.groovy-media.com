@@ -22,7 +22,7 @@
     </div>
 
     <!-- Salary Slip Card (for download) -->
-    <div id="salary-slip" style="max-width: 400px; margin: 0 auto;">
+    <div id="salary-slip" style="max-width: 420px; margin: 0 auto;">
         <div class="salary-slip-card">
             <div class="slip-header">
                 <div class="slip-logo">
@@ -33,7 +33,7 @@
                 </div>
                 <div class="slip-title">
                     <h2>Slip Gaji</h2>
-                    <p>Host Live Groovy</p>
+                    <p>Host Live Streaming</p>
                 </div>
             </div>
 
@@ -77,12 +77,29 @@
                 <!-- Salary Breakdown (Compact) -->
                 <div class="slip-info">
                     @if($salaryScheme)
-                        <div class="slip-row" style="font-size: 13px;">
-                            <span class="slip-label">Gaji Live</span>
-                            <span class="slip-value">{{ number_format($salaryRecord->total_hours, 1) }} ×
-                                Rp{{ number_format($salaryScheme->hourly_rate, 0, ',', '.') }} =
-                                <strong>Rp{{ number_format($salaryRecord->total_hours * $salaryScheme->hourly_rate, 0, ',', '.') }}</strong></span>
-                        </div>
+                        @if(!empty($platformBreakdown) && count($platformBreakdown) > 1)
+                            @foreach($platformBreakdown as $pKey => $pData)
+                                <div class="slip-row" style="font-size: 13px;">
+                                    <span class="slip-label" style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <x-platform-logo :platform="$pKey" size="2xs" />
+                                        <span>Live {{ $pData['info']['short_name'] }}</span>
+                                    </span>
+                                    <span class="slip-value">{{ number_format($pData['hours'], 1) }}j × Rp{{ number_format($pData['rate'], 0, ',', '.') }} =
+                                        <strong>Rp{{ number_format($pData['salary'], 0, ',', '.') }}</strong></span>
+                                </div>
+                            @endforeach
+                            <div class="slip-row" style="font-size: 11px; opacity: 0.8; padding: 1px 0 6px 0;">
+                                <span class="slip-label">Total Live ({{ number_format($salaryRecord->total_hours, 1) }} Jam)</span>
+                                <span class="slip-value">Rp {{ number_format(collect($platformBreakdown)->sum('salary'), 0, ',', '.') }}</span>
+                            </div>
+                        @else
+                            <div class="slip-row" style="font-size: 13px;">
+                                <span class="slip-label">Gaji Live</span>
+                                <span class="slip-value">{{ number_format($salaryRecord->total_hours, 1) }} ×
+                                    Rp{{ number_format($salaryScheme->hourly_rate, 0, ',', '.') }} =
+                                    <strong>Rp{{ number_format($salaryRecord->total_hours * $salaryScheme->hourly_rate, 0, ',', '.') }}</strong></span>
+                            </div>
+                        @endif
 
                         @if($salaryRecord->total_content_edit > 0)
                             <div class="slip-row" style="font-size: 13px;">

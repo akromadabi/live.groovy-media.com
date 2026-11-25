@@ -86,6 +86,16 @@
                 <option value="1" {{ request('term') == '1' ? 'selected' : '' }}>T1 (1-15)</option>
                 <option value="2" {{ request('term') == '2' ? 'selected' : '' }}>T2 (16-Akhir)</option>
             </select>
+            <select name="platform" class="filter-select" onchange="this.form.submit()">
+                <option value="" {{ request('platform') == '' ? 'selected' : '' }}>Semua Platform</option>
+                @foreach($allMarketplaces as $mpKey => $mp)
+                    @if(!empty($mp['enabled']) || request('platform') === $mpKey)
+                        <option value="{{ $mpKey }}" {{ request('platform') == $mpKey ? 'selected' : '' }}>
+                            {{ $mp['name'] }}
+                        </option>
+                    @endif
+                @endforeach
+            </select>
         </form>
         <div class="salary-btn-group">
             <a href="{{ route('user.attendances.create') }}" class="btn btn-primary btn-sm salary-action-btn">
@@ -151,6 +161,27 @@
         </div>
     </div>
 
+    @if(!empty($platformBreakdown) && count($platformBreakdown) > 0)
+        <div class="mb-3" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md, 8px); padding: 0.6rem 0.85rem;">
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Platform:
+            </div>
+            @foreach($platformBreakdown as $pKey => $pData)
+                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; background: {{ $pData['info']['badge_bg'] }}; color: {{ $pData['info']['badge_color'] }};">
+                    <x-platform-logo :platform="$pKey" size="2xs" />
+                    <strong>{{ $pData['info']['short_name'] }}</strong>
+                    <span style="opacity: 0.85;">{{ number_format($pData['hours'], 1) }} jam</span>
+                    @if($pData['rate'] > 0)
+                        <span style="font-weight: 600;">(Rp {{ number_format($pData['salary'], 0, ',', '.') }})</span>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     <!-- T1, T2 & Bonus Summary Cards -->
     <div class="user-summary-grid mb-3">
         <div class="term-card">
@@ -175,7 +206,7 @@
         </div>
         <div class="bonus-card bonus-summary-card {{ $bonusInfo['target_met'] ? 'bonus-met' : 'bonus-pending' }}" style="margin: 0;">
             <div class="bonus-header">
-                <span class="bonus-status">{{ $bonusInfo['target_met'] ? '✓ Target Tercapai' : '⏳ Target: ' . $bonusInfo['monthly_hours'] . '/' . $bonusInfo['target_hours'] . ' j' }}</span>
+                <span class="bonus-status">{{ $bonusInfo['target_met'] ? 'Target Tercapai' : 'Target: ' . $bonusInfo['monthly_hours'] . '/' . $bonusInfo['target_hours'] . ' j' }}</span>
                 <span class="bonus-progress">{{ $bonusInfo['monthly_sales'] }} pcs</span>
             </div>
             <div class="bonus-body">
@@ -192,7 +223,11 @@
     <div class="gamification-card mb-3">
         <div class="flex items-center justify-between gap-2 mb-2">
             <div class="flex items-center gap-2">
-                <span style="font-size: 1.1rem;">🔥</span>
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </span>
                 <div>
                     <h4 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--text);">Progres Menuju Bonus Berikutnya</h4>
                     <span style="font-size: 0.72rem; color: var(--text-muted);">
@@ -259,7 +294,8 @@
                             $salary = 0;
                             if ($scheme) {
                                 $hours = $attendance->live_duration_minutes / 60;
-                                $salary = ($hours * $scheme->hourly_rate)
+                                $rate = $scheme->getHourlyRateForPlatform($attendance->platform ?? 'tiktok');
+                                $salary = ($hours * $rate)
                                     + ($attendance->content_edit_count * $scheme->content_edit_rate)
                                     + ($attendance->content_live_count * $scheme->content_live_rate);
                             }
@@ -267,11 +303,16 @@
                             $totalTiktok = $tiktokTotalsByDate[$dateStr] ?? 0;
                             $totalAbsen = $attendanceTotalsByDate[$dateStr] ?? 0;
                             $totalDiff = $totalTiktok - $totalAbsen;
+                            $pInfo = $attendance->platform_info;
                         @endphp
                         <tr>
                             <td>
                                 <div class="font-medium text-sm">{{ $attendance->attendance_date->translatedFormat('d M Y') }}</div>
-                                <div class="text-xs text-muted flex items-center gap-1 mt-0.5">
+                                <div class="text-xs text-muted flex items-center gap-1 mt-0.5 flex-wrap">
+                                    <span class="badge" style="background: {{ $pInfo['bg_badge'] ?? '#0f172a' }}; color: {{ $pInfo['text_badge'] ?? '#ffffff' }}; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                        <x-platform-logo :platform="$attendance->platform ?? 'tiktok'" size="2xs" />
+                                        <span>{{ $pInfo['short_name'] ?? 'Live' }}</span>
+                                    </span>
                                     <span class="badge badge-secondary badge-xs" style="font-size: 0.68rem; padding: 1px 5px;">{{ $attendance->session_name ?? 'Sesi 1' }}</span>
                                     <span>{{ $attendance->attendance_date->translatedFormat('D') }}</span>
                                 </div>
@@ -347,7 +388,12 @@
                                         </form>
                                     </div>
                                 @else
-                                    <span class="text-xs text-muted" title="Tervalidasi">🔒</span>
+                                    <span class="badge badge-success badge-xs" title="Tervalidasi" style="display: inline-flex; align-items: center; gap: 3px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="11" height="11">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>Valid</span>
+                                    </span>
                                 @endif
                             </td>
                         </tr>
@@ -369,7 +415,8 @@
                     $salary = 0;
                     if ($scheme) {
                         $hours = $attendance->live_duration_minutes / 60;
-                        $salary = ($hours * $scheme->hourly_rate)
+                        $rate = $scheme->getHourlyRateForPlatform($attendance->platform ?? 'tiktok');
+                        $salary = ($hours * $rate)
                             + ($attendance->content_edit_count * $scheme->content_edit_rate)
                             + ($attendance->content_live_count * $scheme->content_live_rate);
                     }
@@ -377,6 +424,7 @@
                     $totalTiktok = $tiktokTotalsByDate[$dateStr] ?? 0;
                     $totalAbsen = $attendanceTotalsByDate[$dateStr] ?? 0;
                     $totalDiff = $totalTiktok - $totalAbsen;
+                    $pInfo = $attendance->platform_info;
                 @endphp
                 <div class="attendance-item">
                     <div class="attendance-date">
@@ -384,8 +432,12 @@
                         <div class="date-month">{{ $attendance->attendance_date->translatedFormat('M') }}</div>
                     </div>
                     <div class="attendance-info">
-                        <div class="flex items-center gap-1 mb-0.5">
+                        <div class="flex items-center gap-1 mb-0.5 flex-wrap">
                             <span class="attendance-duration">{{ $attendance->formatted_duration }}</span>
+                            <span class="badge" style="background: {{ $pInfo['bg_badge'] ?? '#0f172a' }}; color: {{ $pInfo['text_badge'] ?? '#ffffff' }}; font-size: 0.62rem; padding: 2px 5px; border-radius: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
+                                <x-platform-logo :platform="$attendance->platform ?? 'tiktok'" size="2xs" />
+                                <span>{{ $pInfo['short_name'] ?? 'Live' }}</span>
+                            </span>
                             <span class="badge badge-secondary badge-xs" style="font-size: 0.65rem;">{{ $attendance->session_name ?? 'Sesi 1' }}</span>
                         </div>
                         <div class="attendance-meta">
@@ -394,13 +446,16 @@
                         @if($attendance->proof_image || $attendance->vt_link)
                             <div class="flex items-center gap-2 mt-1">
                                 @if($attendance->proof_image)
-                                    <span onclick="openImageModal('{{ $attendance->proof_image_url }}')" style="font-size: 0.7rem; color: var(--primary); cursor: pointer; text-decoration: underline;">
-                                        📸 Lihat Bukti
+                                    <span onclick="openImageModal('{{ $attendance->proof_image_url }}')" style="font-size: 0.7rem; color: var(--primary); cursor: pointer; text-decoration: underline; display: inline-flex; align-items: center; gap: 3px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="12" height="12">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span>Bukti</span>
                                     </span>
                                 @endif
                                 @if($attendance->vt_link)
                                     <a href="{{ $attendance->vt_link }}" target="_blank" rel="noopener noreferrer" style="font-size: 0.7rem; color: #6366f1;">
-                                        🔗 Link VT ↗
+                                        VT ↗
                                     </a>
                                 @endif
                             </div>
@@ -422,12 +477,12 @@
                             @endif
 
                             @if($attendance->status === 'validated')
-                                <span class="badge badge-success badge-sm" title="Tervalidasi">🔒</span>
+                                <span class="badge badge-success badge-sm" title="Tervalidasi">Valid</span>
                             @elseif($attendance->status === 'pending')
-                                <span class="badge badge-warning badge-sm">⏳</span>
+                                <span class="badge badge-warning badge-sm">Pending</span>
                                 <a href="{{ route('user.attendances.edit', $attendance) }}" class="btn btn-secondary btn-xs" style="padding: 2px 6px; font-size: 0.7rem;">Edit</a>
                             @else
-                                <span class="badge badge-danger badge-sm">✕</span>
+                                <span class="badge badge-danger badge-sm">Ditolak</span>
                             @endif
                         </div>
                     </div>

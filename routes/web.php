@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PerformanceController as AdminPerformanceControll
 use App\Http\Controllers\User\DashboardController as UserDashboardController;
 use App\Http\Controllers\User\AttendanceController as UserAttendanceController;
 use App\Http\Controllers\User\SettingsController as UserSettingsController;
+use App\Http\Controllers\User\PerformanceController as UserPerformanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -116,6 +117,10 @@ Route::post('/leave-impersonate', [AdminUserController::class, 'leaveImpersonate
 Route::prefix('user')->name('user.')->middleware(['auth', 'role:user'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
+
+    // Top Performance
+    Route::get('/performance', [UserPerformanceController::class, 'index'])->name('performance.index');
+    Route::get('/performance/user/{user}', [UserPerformanceController::class, 'userDetail'])->name('performance.user-detail');
 
     // Attendances
     Route::get('attendances', [UserAttendanceController::class, 'index'])->name('attendances.index');

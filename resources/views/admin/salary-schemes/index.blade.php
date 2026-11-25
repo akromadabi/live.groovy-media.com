@@ -7,7 +7,7 @@
         <div class="card-header flex items-center justify-between" style="padding: 0.65rem 0.85rem;">
             <div>
                 <h3 class="card-title" style="font-size: 0.95rem; font-weight: 600;">Skema & Tarif Gaji Pengguna</h3>
-                <p class="text-xs text-muted mb-0">Atur tarif per jam dan komisi konten untuk masing-masing host/staf</p>
+                <p class="text-xs text-muted mb-0">Atur tarif per jam, target live, dan komisi konten untuk masing-masing host/staf</p>
             </div>
             <span class="text-xs text-muted font-medium">{{ $users->count() }} Pengguna</span>
         </div>
@@ -18,6 +18,7 @@
                         <th>Pengguna</th>
                         <th>Tugas</th>
                         <th>Gaji / Jam</th>
+                        <th class="hide-on-mobile">Target Live</th>
                         <th class="hide-on-mobile">Konten Edit</th>
                         <th class="hide-on-mobile">Konten Live</th>
                         <th style="width: 80px; text-align: center;">Aksi</th>
@@ -39,13 +40,49 @@
                                 <span class="badge badge-secondary">{{ $user->task ?? '-' }}</span>
                             </td>
                             <td>
-                                <span class="font-semibold text-sm" style="color: var(--primary);">Rp {{ number_format($user->salaryScheme->hourly_rate ?? 0, 0, ',', '.') }}</span>
+                                @if(($marketplaceRateMode ?? 'same') === 'different' && isset($activeMarketplaces) && count($activeMarketplaces) > 1)
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        @foreach($activeMarketplaces as $mpKey => $mp)
+                                            <div style="font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+                                                <x-platform-logo :platform="$mpKey" size="xs" />
+                                                <span class="text-muted" style="font-size: 0.72rem; font-weight: 500;">{{ $mp['short_name'] }}:</span>
+                                                <span style="font-weight: 700; color: var(--text-primary);">
+                                                    Rp {{ number_format($user->salaryScheme?->getHourlyRateForPlatform($mpKey) ?? $mp['default_hourly_rate'], 0, ',', '.') }}
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="font-semibold text-sm" style="color: var(--primary);">
+                                        Rp {{ number_format($user->salaryScheme?->getHourlyRateForPlatform() ?? ($globalDefaults['hourly_rate'] ?? 20000), 0, ',', '.') }} <span class="text-xs text-muted font-normal">/ jam</span>
+                                    </span>
+                                @endif
                             </td>
                             <td class="hide-on-mobile">
-                                <span class="text-sm">Rp {{ number_format($user->salaryScheme->content_edit_rate ?? 0, 0, ',', '.') }}</span>
+                                @if(isset($activeMarketplaces) && count($activeMarketplaces) > 1 && is_array($user->salaryScheme?->platform_rates))
+                                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                                        @foreach($activeMarketplaces as $mpKey => $mp)
+                                            <div style="font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+                                                <x-platform-logo :platform="$mpKey" size="xs" />
+                                                <span class="text-muted" style="font-size: 0.72rem; font-weight: 500;">{{ $mp['short_name'] }}:</span>
+                                                <span style="font-weight: 700; color: var(--text-primary);">
+                                                    {{ $user->salaryScheme?->getTargetHoursForPlatform($mpKey) ?? 40 }}j
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                        <div style="font-size: 0.7rem; color: var(--text-muted); border-top: 1px dashed var(--border); padding-top: 2px;">
+                                            Total: <strong>{{ $user->salaryScheme?->getTargetHoursForPlatform() ?? ($globalDefaults['monthly_target_hours'] ?? 80) }} jam</strong>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-sm font-semibold">{{ $user->salaryScheme?->getTargetHoursForPlatform() ?? ($globalDefaults['monthly_target_hours'] ?? 80) }} jam</span>
+                                @endif
                             </td>
                             <td class="hide-on-mobile">
-                                <span class="text-sm">Rp {{ number_format($user->salaryScheme->content_live_rate ?? 0, 0, ',', '.') }}</span>
+                                <span class="text-sm">Rp {{ number_format($user->salaryScheme?->getContentEditRateForPlatform() ?? ($globalDefaults['content_edit_rate'] ?? 10000), 0, ',', '.') }}</span>
+                            </td>
+                            <td class="hide-on-mobile">
+                                <span class="text-sm">Rp {{ number_format($user->salaryScheme?->getContentLiveRateForPlatform() ?? ($globalDefaults['content_live_rate'] ?? 5000), 0, ',', '.') }}</span>
                             </td>
                             <td style="text-align: center;">
                                 <a href="{{ route('admin.salary-schemes.edit', $user) }}" class="btn btn-secondary btn-sm" style="height: 28px; padding: 0 0.65rem; font-size: 0.75rem;">
@@ -60,7 +97,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted" style="padding: 2.5rem;">
+                            <td colspan="7" class="text-center text-muted" style="padding: 2.5rem;">
                                 Tidak ada data pengguna
                             </td>
                         </tr>

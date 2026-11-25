@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Salary;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -122,8 +123,6 @@ class DashboardController extends Controller
         $targetYear = $selectedYear ?: now()->year;
         $endDay = \Carbon\Carbon::createFromDate($targetYear, $targetMonth, 1)->endOfMonth()->day;
 
-        $monthlyTarget = $scheme ? $scheme->calculateMonthlyTarget($targetYear, $targetMonth) : 0;
-
         // Get monthly hours for target comparison
         $targetMonthStart = \Carbon\Carbon::createFromDate($targetYear, $targetMonth, 1)->startOfDay();
         $targetMonthEnd = $targetMonthStart->copy()->endOfMonth();
@@ -132,7 +131,61 @@ class DashboardController extends Controller
             ->whereBetween('attendance_date', [$targetMonthStart, $targetMonthEnd])
             ->sum('live_duration_minutes');
         $monthlyHours = round($targetMonthMinutes / 60, 1);
-        $targetMet = $monthlyHours >= $monthlyTarget;
+
+        // Active marketplaces & dynamic per-platform target calculations
+        $activeMarketplaces = Setting::getActiveMarketplaces();
+        $platformTargets = [];
+        $hasCustomPlatformTargets = false;
+
+        // Check if scheme has custom targets configured in platform_rates
+        if ($scheme && is_array($scheme->platform_rates) && count($activeMarketplaces) > 1) {
+            foreach ($activeMarketplaces as $platKey => $platInfo) {
+                if (isset($scheme->platform_rates[$platKey]) && is_array($scheme->platform_rates[$platKey])) {
+                    $pTarget = isset($scheme->platform_rates[$platKey]['target_hours'])
+                        ? (float) $scheme->platform_rates[$platKey]['target_hours']
+                        : 0;
+                    if ($pTarget > 0) {
+                        $hasCustomPlatformTargets = true;
+                    }
+                }
+            }
+        }
+
+        // Get monthly attendances for target month grouped by platform
+        $monthAttendancesByPlatform = Attendance::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'validated'])
+            ->whereBetween('attendance_date', [$targetMonthStart, $targetMonthEnd])
+            ->selectRaw('platform, SUM(live_duration_minutes) as total_minutes')
+            ->groupBy('platform')
+            ->pluck('total_minutes', 'platform')
+            ->all();
+
+        if ($hasCustomPlatformTargets) {
+            $totalPlatformTarget = 0;
+            foreach ($activeMarketplaces as $platKey => $platInfo) {
+                $pTarget = $scheme->getTargetHoursForPlatform($platKey);
+                $pMinutes = (int) ($monthAttendancesByPlatform[$platKey] ?? 0);
+                $pHours = round($pMinutes / 60, 1);
+                $pPercent = $pTarget > 0 ? min(100, round(($pHours / $pTarget) * 100)) : 0;
+                $pMet = $pTarget > 0 && $pHours >= $pTarget;
+
+                $platformTargets[$platKey] = [
+                    'key' => $platKey,
+                    'name' => $platInfo['name'],
+                    'short_name' => $platInfo['short_name'],
+                    'target_hours' => $pTarget,
+                    'current_hours' => $pHours,
+                    'progress_percent' => $pPercent,
+                    'target_met' => $pMet,
+                    'remaining_hours' => max(0, round($pTarget - $pHours, 1)),
+                ];
+                $totalPlatformTarget += $pTarget;
+            }
+
+            $monthlyTarget = $totalPlatformTarget > 0 ? $totalPlatformTarget : ($scheme ? $scheme->calculateMonthlyTarget($targetYear, $targetMonth) : 0);
+        } else {
+            $monthlyTarget = $scheme ? $scheme->calculateMonthlyTarget($targetYear, $targetMonth) : 0;
+        }
 
         // Calculate bonus (always calculate for display, regardless of target met)
         $monthlyBonus = 0;
@@ -151,6 +204,7 @@ class DashboardController extends Controller
             }
         }
 
+        $targetMet = $monthlyHours >= $monthlyTarget;
         $targetPercent = $monthlyTarget > 0 ? min(100, round(($monthlyHours / $monthlyTarget) * 100)) : 0;
 
         // Gamification calculations for next bonus tier
@@ -172,6 +226,7 @@ class DashboardController extends Controller
             'current_multiplier' => $currentMultiplier,
             'next_target' => $nextTierTarget,
             'remaining_to_next' => $remainingToNext,
+            'remaining_sales' => $remainingToNext,
             'progress_percent' => $tierProgressPercent,
             'next_bonus_total' => $nextBonusTotal,
         ];
@@ -192,7 +247,8 @@ class DashboardController extends Controller
             'monthlyBonus',
             'targetMet',
             'targetPercent',
-            'bonusGamification'
+            'bonusGamification',
+            'platformTargets'
         ));
     }
 
@@ -230,17 +286,19 @@ class DashboardController extends Controller
             // Calculate base salary for T1
             foreach ($t1Attendances as $a) {
                 $hours = $a->live_duration_minutes / 60;
-                $t1Salary += $hours * $scheme->hourly_rate;
-                $t1Salary += $a->content_edit_count * $scheme->content_edit_rate;
-                $t1Salary += $a->content_live_count * $scheme->content_live_rate;
+                $plat = $a->platform ?? 'tiktok';
+                $t1Salary += $hours * $scheme->getHourlyRateForPlatform($plat);
+                $t1Salary += ($a->content_edit_count ?? 0) * $scheme->getContentEditRateForPlatform($plat);
+                $t1Salary += ($a->content_live_count ?? 0) * $scheme->getContentLiveRateForPlatform($plat);
             }
 
             // Calculate base salary for T2
             foreach ($t2Attendances as $a) {
                 $hours = $a->live_duration_minutes / 60;
-                $t2Salary += $hours * $scheme->hourly_rate;
-                $t2Salary += $a->content_edit_count * $scheme->content_edit_rate;
-                $t2Salary += $a->content_live_count * $scheme->content_live_rate;
+                $plat = $a->platform ?? 'tiktok';
+                $t2Salary += $hours * $scheme->getHourlyRateForPlatform($plat);
+                $t2Salary += ($a->content_edit_count ?? 0) * $scheme->getContentEditRateForPlatform($plat);
+                $t2Salary += ($a->content_live_count ?? 0) * $scheme->getContentLiveRateForPlatform($plat);
             }
 
             // T1: no bonus (month not finished yet)
@@ -302,9 +360,10 @@ class DashboardController extends Controller
         foreach ($attendances as $attendance) {
             $hours = $attendance->live_duration_minutes / 60;
             $totalHours += $hours;
-            $total += $hours * $scheme->hourly_rate;
-            $total += $attendance->content_edit_count * $scheme->content_edit_rate;
-            $total += $attendance->content_live_count * $scheme->content_live_rate;
+            $plat = $attendance->platform ?? 'tiktok';
+            $total += $hours * $scheme->getHourlyRateForPlatform($plat);
+            $total += ($attendance->content_edit_count ?? 0) * $scheme->getContentEditRateForPlatform($plat);
+            $total += ($attendance->content_live_count ?? 0) * $scheme->getContentLiveRateForPlatform($plat);
 
             // Group daily sales for bonus calculation
             $date = $attendance->attendance_date->toDateString();

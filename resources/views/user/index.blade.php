@@ -112,9 +112,9 @@
     <div class="bonus-card mb-4 {{ $bonusInfo['target_met'] ? 'bonus-met' : 'bonus-pending' }}">
         <div class="bonus-header">
             @if($bonusInfo['target_met'])
-                <span class="bonus-status">✓ Target Tercapai</span>
+                <span class="bonus-status">Target Tercapai</span>
             @else
-                <span class="bonus-status">⏳ Belum Tercapai</span>
+                <span class="bonus-status">Belum Tercapai</span>
             @endif
             <span class="bonus-progress">{{ $bonusInfo['monthly_hours'] }}/{{ $bonusInfo['target_hours'] }} jam</span>
         </div>
@@ -212,11 +212,11 @@
 
                             {{-- Attendance Status Icon --}}
                             @if($attendance->status === 'validated')
-                                <span class="badge badge-success badge-sm" title="Tervalidasi">🔒</span>
+                                <span class="badge badge-success badge-sm" title="Tervalidasi">Valid</span>
                             @elseif($attendance->status === 'pending')
-                                <span class="badge badge-warning badge-sm">⏳</span>
+                                <span class="badge badge-warning badge-sm">Pending</span>
                             @else
-                                <span class="badge badge-danger badge-sm">✕</span>
+                                <span class="badge badge-danger badge-sm">Ditolak</span>
                             @endif
                             @if($attendance->status === 'pending')
                                 <a href="{{ route('user.attendances.edit', $attendance) }}"

@@ -158,9 +158,21 @@ class SalaryController extends Controller
         $totalSales = $attendances->sum('sales_count');
 
         // Calculate base salary components
-        $liveSalary = $totalHours * $scheme->hourly_rate;
-        $contentEditBonus = $totalContentEdit * $scheme->content_edit_rate;
-        $contentLiveBonus = $totalContentLive * $scheme->content_live_rate;
+        $liveSalary = 0;
+        $contentEditBonus = 0;
+        $contentLiveBonus = 0;
+        foreach ($attendances as $att) {
+            $plat = $att->platform ?? 'tiktok';
+            $rate = $scheme->getHourlyRateForPlatform($plat);
+            $editRate = $scheme->getContentEditRateForPlatform($plat);
+            $liveRate = $scheme->getContentLiveRateForPlatform($plat);
+
+            $liveSalary += ($att->live_duration_minutes / 60) * $rate;
+            $contentEditBonus += (($att->content_edit_count ?? 0) * $editRate);
+            $contentLiveBonus += (($att->content_live_count ?? 0) * $liveRate);
+        }
+
+
 
         // Check if monthly target is met (untuk bonus penjualan)
         // Target dihitung per bulan, jadi kita perlu total jam bulan ini
@@ -226,7 +238,9 @@ class SalaryController extends Controller
             ->orderBy('attendance_date')
             ->get();
 
-        return view('admin.salaries.show', compact('salary', 'attendances'));
+        $platformBreakdown = $salary->user->salaryScheme?->getPlatformBreakdown($attendances) ?? [];
+
+        return view('admin.salaries.show', compact('salary', 'attendances', 'platformBreakdown'));
     }
 
     /**

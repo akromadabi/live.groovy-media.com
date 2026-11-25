@@ -28,6 +28,42 @@
         margin-top: 0.15rem;
     }
 
+    .perf-title-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-scoring-rule {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0.18rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--primary);
+        background: rgba(99, 102, 241, 0.08);
+        border: 1px solid rgba(99, 102, 241, 0.22);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        line-height: 1.2;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+
+    .btn-scoring-rule:hover {
+        background: rgba(99, 102, 241, 0.16);
+        border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    [data-theme="dark"] .btn-scoring-rule {
+        background: rgba(99, 102, 241, 0.18);
+        border-color: rgba(129, 140, 248, 0.35);
+        color: #a5b4fc;
+    }
+
     /* Filter Card & Segmented Control */
     .perf-filter-card {
         background: var(--surface);
@@ -358,8 +394,10 @@
         .perf-header-actions .btn {
             width: 100%;
             justify-content: center;
-            height: 34px;
-            font-size: 0.78rem;
+            height: 33px;
+            font-size: 0.74rem;
+            padding: 0 0.4rem;
+            white-space: nowrap;
         }
 
         /* 4 MVP Cards (2 columns x 2 rows on mobile) */
@@ -700,7 +738,15 @@
          ============================================== -->
     <div class="perf-header">
         <div>
-            <h2 class="perf-title">Top Performa Host</h2>
+            <div class="perf-title-row">
+                <h2 class="perf-title">Top Performa Host</h2>
+                <button type="button" class="btn-scoring-rule" onclick="openModal('scoringRulesModal')" data-modal="scoringRulesModal" title="Aturan Penilaian Skor Host">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="13" height="13">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Aturan Skor</span>
+                </button>
+            </div>
             <div class="perf-subtitle">Leaderboard live streaming dinilai dari durasi, penjualan produk, dan produksi konten.</div>
         </div>
 
@@ -837,7 +883,7 @@
 
                 @if($selectedMonth || $selectedYear || $period !== 'all')
                     <a href="{{ route('admin.performance.index') }}" class="btn btn-secondary btn-sm perf-btn-reset">
-                        ✕ Reset
+                        Reset
                     </a>
                 @endif
             </form>
@@ -1223,6 +1269,8 @@
         </div>
     </div>
 </div>
+
+@include('partials.scoring-rules-modal')
 @endsection
 
 @push('scripts')

@@ -152,6 +152,9 @@
         .dashboard-action-group {
             width: 100% !important;
             margin-left: 0 !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.45rem !important;
         }
 
         .dashboard-action-btn {
@@ -224,6 +227,13 @@
         </form>
 
         <div class="dashboard-action-group">
+            <a href="{{ route('user.performance.index') }}" class="btn btn-secondary dashboard-action-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="15" height="15">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                Top Performa
+            </a>
             <a href="{{ route('user.attendances.create') }}" class="btn btn-primary dashboard-action-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="15" height="15">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -341,7 +351,12 @@
         <div class="card" style="margin: 0;">
             <div class="card-body" style="padding: 0.85rem 1rem;">
                 <div class="flex items-center justify-between mb-2">
-                    <h3 style="font-size: 0.875rem; font-weight: 600; margin: 0;">🎯 Target Bulan {{ \Carbon\Carbon::createFromDate($selectedYear ?: now()->year, $selectedMonth ?: now()->month, 1)->translatedFormat('F') }}</h3>
+                    <div class="flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16" style="color: #6366f1;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <h3 style="font-size: 0.875rem; font-weight: 600; margin: 0;">Target Bulan {{ \Carbon\Carbon::createFromDate($selectedYear ?: now()->year, $selectedMonth ?: now()->month, 1)->translatedFormat('F') }}</h3>
+                    </div>
                     <span style="font-size: 0.8rem; font-weight: 600; color: {{ $targetMet ? 'var(--success)' : 'var(--danger, #ef4444)' }};">
                         {{ $monthlyHours }}/{{ $monthlyTarget }} jam ({{ $targetPercent }}%)
                     </span>
@@ -352,12 +367,52 @@
                 </div>
                 <div class="flex items-center justify-between" style="font-size: 0.75rem;">
                     @if($targetMet)
-                        <span style="color: var(--success, #10b981); font-weight: 600;">✅ Target Tercapai!</span>
+                        <span style="color: var(--success, #10b981); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="13" height="13">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Target Tercapai!
+                        </span>
                     @else
                         <span style="color: var(--text-muted, #6b7280);">Kurang {{ max(0, $monthlyTarget - $monthlyHours) }} jam lagi untuk klaim bonus</span>
                     @endif
                     <span style="color: var(--text-muted, #6b7280);">Bonus Penjualan: <strong style="color: {{ $targetMet ? 'var(--success)' : 'var(--text-muted)' }};">Rp {{ number_format($monthlyBonus, 0, ',', '.') }}</strong></span>
                 </div>
+
+                @if(!empty($platformTargets) && count($platformTargets) > 1)
+                    <!-- Per-Marketplace Targets Breakdown (Dinamis Sesuai Skema Gaji) -->
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border, #e5e7eb); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                        @foreach($platformTargets as $pt)
+                            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px;">
+                                <div class="flex items-center justify-between mb-1" style="font-size: 0.74rem;">
+                                    <span style="font-weight: 600; color: var(--text-primary); display: inline-flex; align-items: center; gap: 6px;">
+                                        <x-platform-logo :platform="$pt['key']" size="2xs" />
+                                        <span>Target {{ $pt['name'] }}</span>
+                                    </span>
+                                    <span style="font-weight: 700; color: {{ $pt['target_met'] ? '#10b981' : 'var(--text-secondary)' }};">
+                                        {{ $pt['current_hours'] }}/{{ $pt['target_hours'] }} jam
+                                        <span style="font-size: 0.68rem; font-weight: 600; opacity: 0.85;">({{ $pt['progress_percent'] }}%)</span>
+                                    </span>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.08); border-radius: 999px; height: 6px; overflow: hidden; margin-bottom: 3px;">
+                                    <div style="background: {{ $pt['target_met'] ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #6366f1, #818cf8)' }}; height: 100%; border-radius: 999px; width: {{ $pt['progress_percent'] }}%; transition: width 0.5s ease;"></div>
+                                </div>
+                                <div class="flex items-center justify-between" style="font-size: 0.68rem; color: var(--text-muted);">
+                                    @if($pt['target_met'])
+                                        <span style="color: #10b981; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="11" height="11">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Target Tercapai
+                                        </span>
+                                    @else
+                                        <span>Sisa: {{ $pt['remaining_hours'] }} jam lagi</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
 
                 @php
                     $t1 = $termData['t1_salary'] ?? 0;
@@ -374,11 +429,14 @@
                     <!-- Gamification Bonus Tier Progress Bar -->
                     <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border, #e5e7eb);">
                         <div class="flex items-center justify-between mb-1" style="font-size: 0.75rem;">
-                            <span style="font-weight: 600; color: #6366f1;">
-                                🚀 Progres Bonus Tier ({{ $bonusGamification['current_sales'] }}/{{ $bonusGamification['next_target'] }} pcs)
+                            <span style="font-weight: 600; color: #6366f1; display: inline-flex; align-items: center; gap: 4px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="13" height="13">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                Progres Bonus Tier ({{ $bonusGamification['current_sales'] }}/{{ $bonusGamification['next_target'] }} pcs)
                             </span>
                             <span style="font-weight: 700; color: #10b981;">
-                                Kurang {{ $bonusGamification['remaining_sales'] }} pcs lagi!
+                                Kurang {{ $bonusGamification['remaining_sales'] ?? $bonusGamification['remaining_to_next'] ?? 0 }} pcs lagi!
                             </span>
                         </div>
                         <div style="background: rgba(0,0,0,0.06); border-radius: 999px; height: 8px; overflow: hidden; margin-bottom: 4px;">
@@ -459,16 +517,23 @@
                 <div class="flex items-center justify-between"
                     style="padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border);">
                     <div>
-                        <div class="font-medium text-sm">{{ $attendance->attendance_date->translatedFormat('d M Y') }}</div>
+                        <div class="font-medium text-sm flex items-center gap-1">
+                            {{ $attendance->attendance_date->translatedFormat('d M Y') }}
+                            @php $pInfo = $attendance->platform_info; @endphp
+                            <span class="badge badge-sm" style="background: {{ $pInfo['badge_bg'] }}; color: {{ $pInfo['badge_color'] }}; font-size: 10px; padding: 1px 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                <x-platform-logo :platform="$attendance->platform" size="2xs" />
+                                <span>{{ $pInfo['short_name'] }}</span>
+                            </span>
+                        </div>
                         <div class="text-xs text-muted">{{ $attendance->formatted_duration }} • Jual: {{ $attendance->sales_count }}</div>
                     </div>
                     <div>
                         @if($attendance->status === 'validated')
-                            <span class="badge badge-success badge-sm" title="Tervalidasi">🔒 Tervalidasi</span>
+                            <span class="badge badge-success badge-sm" title="Tervalidasi">Tervalidasi</span>
                         @elseif($attendance->status === 'pending')
-                            <span class="badge badge-warning badge-sm" title="Pending">⏳ Pending</span>
+                            <span class="badge badge-warning badge-sm" title="Pending">Pending</span>
                         @else
-                            <span class="badge badge-danger badge-sm">✕ Ditolak</span>
+                            <span class="badge badge-danger badge-sm">Ditolak</span>
                         @endif
                     </div>
                 </div>

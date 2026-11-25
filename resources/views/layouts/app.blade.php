@@ -25,7 +25,7 @@
     @stack('styles')
 </head>
 
-<body>
+<body data-instant-intensity="mousedown">
     <div class="app-container">
         <!-- Sidebar Overlay (Mobile) -->
         <div class="sidebar-overlay"></div>

@@ -55,10 +55,31 @@
                                 @endif
                             </td>
                         </tr>
-                        <tr>
-                            <td class="text-muted">Gaji Live</td>
-                            <td class="text-right">Rp {{ number_format($salary->live_salary, 0, ',', '.') }}</td>
-                        </tr>
+                        @if(!empty($platformBreakdown) && count($platformBreakdown) > 1)
+                            @foreach($platformBreakdown as $pKey => $pData)
+                                <tr>
+                                    <td class="text-muted" style="padding-left: 1.25rem;">
+                                        <span class="badge badge-sm" style="background: {{ $pData['info']['badge_bg'] }}; color: {{ $pData['info']['badge_color'] }}; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <x-platform-logo :platform="$pKey" size="2xs" />
+                                            <span>Live {{ $pData['info']['short_name'] }}</span>
+                                        </span>
+                                    </td>
+                                    <td class="text-right">
+                                        <span class="text-muted text-sm">{{ number_format($pData['hours'], 1) }}j × Rp {{ number_format($pData['rate'], 0, ',', '.') }}</span>
+                                        <br><strong>Rp {{ number_format($pData['salary'], 0, ',', '.') }}</strong>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            <tr style="background: var(--bg-secondary);">
+                                <td class="font-medium">Total Gaji Live</td>
+                                <td class="text-right font-medium">Rp {{ number_format($salary->live_salary, 0, ',', '.') }}</td>
+                            </tr>
+                        @else
+                            <tr>
+                                <td class="text-muted">Gaji Live</td>
+                                <td class="text-right">Rp {{ number_format($salary->live_salary, 0, ',', '.') }}</td>
+                            </tr>
+                        @endif
                         <tr>
                             <td class="text-muted">Bonus Konten Edit</td>
                             <td class="text-right">Rp {{ number_format($salary->content_edit_bonus, 0, ',', '.') }}</td>
@@ -132,6 +153,7 @@
                     <thead>
                         <tr>
                             <th>Tanggal</th>
+                            <th>Platform</th>
                             <th>Durasi</th>
                             <th>Edit</th>
                             <th>Live</th>
@@ -140,8 +162,14 @@
                     </thead>
                     <tbody>
                         @forelse($attendances as $attendance)
+                            @php $pInfo = $attendance->platform_info; @endphp
                             <tr>
                                 <td>{{ $attendance->attendance_date->format('d M') }}</td>
+                                <td>
+                                    <span class="badge badge-sm" style="background: {{ $pInfo['badge_bg'] }}; color: {{ $pInfo['badge_color'] }}; font-size: 11px;">
+                                        {{ $pInfo['icon'] }} {{ $pInfo['short_name'] }}
+                                    </span>
+                                </td>
                                 <td>{{ $attendance->formatted_duration }}</td>
                                 <td>{{ $attendance->content_edit_count }}</td>
                                 <td>{{ $attendance->content_live_count }}</td>
@@ -149,7 +177,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted">
+                                <td colspan="6" class="text-center text-muted">
                                     Tidak ada data absensi tervalidasi pada periode ini
                                 </td>
                             </tr>

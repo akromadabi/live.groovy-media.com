@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Setting;
 
 class Attendance extends Model
 {
@@ -14,6 +15,7 @@ class Attendance extends Model
         'user_id',
         'attendance_date',
         'session_name',
+        'platform',
         'live_duration_minutes',
         'content_edit_count',
         'content_live_count',
@@ -74,6 +76,22 @@ class Attendance extends Model
     }
 
     /**
+     * Get metadata info about the platform
+     */
+    public function getPlatformInfoAttribute(): array
+    {
+        return Setting::getPlatformInfo($this->platform ?? 'tiktok');
+    }
+
+    /**
+     * Get formatted platform label
+     */
+    public function getPlatformLabelAttribute(): string
+    {
+        return $this->platform_info['name'] ?? ucfirst($this->platform ?? 'tiktok');
+    }
+
+    /**
      * Scope for pending attendances
      */
     public function scopePending($query)
@@ -95,5 +113,16 @@ class Attendance extends Model
     public function scopeDateRange($query, $startDate, $endDate)
     {
         return $query->whereBetween('attendance_date', [$startDate, $endDate]);
+    }
+
+    /**
+     * Scope for platform
+     */
+    public function scopePlatform($query, $platform)
+    {
+        if (!empty($platform)) {
+            return $query->where('platform', $platform);
+        }
+        return $query;
     }
 }

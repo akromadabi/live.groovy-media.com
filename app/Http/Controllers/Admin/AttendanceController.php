@@ -46,6 +46,11 @@ class AttendanceController extends Controller
             $query->where('attendances.status', $request->status);
         }
 
+        // Filter by platform
+        if ($request->filled('platform')) {
+            $query->where('attendances.platform', $request->platform);
+        }
+
         // Sorting
         $sort = $request->input('sort', 'attendance_date');
         $direction = $request->input('direction', 'desc');
@@ -87,6 +92,9 @@ class AttendanceController extends Controller
         if ($request->filled('status')) {
             $totalsQuery->where('status', $request->status);
         }
+        if ($request->filled('platform')) {
+            $totalsQuery->where('platform', $request->platform);
+        }
 
         // Optimized: Single aggregated query instead of 5 separate queries
         $stats = $totalsQuery->selectRaw('
@@ -121,10 +129,10 @@ class AttendanceController extends Controller
                 ->whereBetween('attendance_date', [$monthStart, $monthEnd])
                 ->sum('sales_count');
 
-            // Target calculation: (days in month - 4 days off) × 3 hours/day
+            // Target calculation: use scheme monthly target if set, otherwise fallback to formula
             $daysOff = 4;
             $dailyTargetHours = 3;
-            $targetHours = ($daysInMonth - $daysOff) * $dailyTargetHours;
+            $targetHours = $scheme ? $scheme->getTargetHoursForPlatform() : (float) Setting::getValue('monthly_target_hours', ($daysInMonth - $daysOff) * $dailyTargetHours);
 
             $targetMet = $monthlyHours >= $targetHours;
 
@@ -153,9 +161,15 @@ class AttendanceController extends Controller
             // Calculate total salary
             $totalSalary = 0;
             if ($scheme) {
-                $totalSalary = ($monthlyMinutes / 60 * $scheme->hourly_rate)
-                    + ($totalContentEdit * $scheme->content_edit_rate)
-                    + ($totalContentLive * $scheme->content_live_rate);
+                foreach ($validatedAttendances as $att) {
+                    $plat = $att->platform ?? 'tiktok';
+                    $hRate = $scheme->getHourlyRateForPlatform($plat);
+                    $editRate = $scheme->getContentEditRateForPlatform($plat);
+                    $liveRate = $scheme->getContentLiveRateForPlatform($plat);
+                    $totalSalary += (($att->live_duration_minutes / 60) * $hRate)
+                        + (($att->content_edit_count ?? 0) * $editRate)
+                        + (($att->content_live_count ?? 0) * $liveRate);
+                }
             }
 
             $bonusInfo = [
@@ -187,9 +201,16 @@ class AttendanceController extends Controller
                 $hours = $minutes / 60;
                 $salary = 0;
                 if ($scheme) {
-                    $salary = ($hours * $scheme->hourly_rate)
-                        + ($attendances->sum('content_edit_count') * $scheme->content_edit_rate)
-                        + ($attendances->sum('content_live_count') * $scheme->content_live_rate);
+                    foreach ($attendances as $att) {
+                        $plat = $att->platform ?? 'tiktok';
+                        $hRate = $scheme->getHourlyRateForPlatform($plat);
+                        $editRate = $scheme->getContentEditRateForPlatform($plat);
+                        $liveRate = $scheme->getContentLiveRateForPlatform($plat);
+
+                        $salary += (($att->live_duration_minutes / 60) * $hRate)
+                            + (($att->content_edit_count ?? 0) * $editRate)
+                            + (($att->content_live_count ?? 0) * $liveRate);
+                    }
                 }
                 return [
                     'hours' => round($hours, 1),
@@ -217,7 +238,9 @@ class AttendanceController extends Controller
                 ->toArray();
         }
 
-        return view('admin.attendances.index', compact('attendances', 'users', 'totals', 'bonusInfo', 'tiktokTotals'));
+        $allMarketplaces = \App\Models\Setting::getMarketplaces();
+
+        return view('admin.attendances.index', compact('attendances', 'users', 'totals', 'bonusInfo', 'tiktokTotals', 'allMarketplaces'));
     }
 
     /**
@@ -338,7 +361,8 @@ class AttendanceController extends Controller
     public function create()
     {
         $users = User::where('role', 'user')->where('is_active', true)->orderBy('name')->get();
-        return view('admin.attendances.create', compact('users'));
+        $activeMarketplaces = \App\Models\Setting::getActiveMarketplaces();
+        return view('admin.attendances.create', compact('users', 'activeMarketplaces'));
     }
 
     /**
@@ -348,6 +372,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'platform' => 'nullable|string|max:30',
             'attendance_date' => 'required|date',
             'session_name' => 'nullable|string|max:50',
             'live_duration_hours' => 'required|numeric|min:0.5|max:24',
@@ -369,6 +394,7 @@ class AttendanceController extends Controller
 
         Attendance::create([
             'user_id' => $validated['user_id'],
+            'platform' => $validated['platform'] ?? 'tiktok',
             'attendance_date' => $validated['attendance_date'],
             'session_name' => $validated['session_name'] ?? 'Sesi 1',
             'live_duration_minutes' => $totalMinutes,
@@ -391,7 +417,8 @@ class AttendanceController extends Controller
     public function edit(Attendance $attendance)
     {
         $users = User::where('role', 'user')->orderBy('name')->get();
-        return view('admin.attendances.edit', compact('attendance', 'users'));
+        $activeMarketplaces = \App\Models\Setting::getActiveMarketplaces();
+        return view('admin.attendances.edit', compact('attendance', 'users', 'activeMarketplaces'));
     }
 
     /**
@@ -401,6 +428,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'platform' => 'nullable|string|max:30',
             'attendance_date' => 'required|date',
             'session_name' => 'nullable|string|max:50',
             'live_duration_hours' => 'required|numeric|min:0.5|max:24',
@@ -418,6 +446,7 @@ class AttendanceController extends Controller
 
         $updateData = [
             'user_id' => $validated['user_id'],
+            'platform' => $validated['platform'] ?? $attendance->platform,
             'attendance_date' => $validated['attendance_date'],
             'session_name' => $validated['session_name'] ?? 'Sesi 1',
             'live_duration_minutes' => $totalMinutes,

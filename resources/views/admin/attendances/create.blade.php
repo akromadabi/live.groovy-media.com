@@ -35,6 +35,20 @@
                     @enderror
                 </div>
 
+                <div class="form-group mb-3">
+                    <label for="platform" class="form-label">Platform Live</label>
+                    <select name="platform" id="platform" class="form-control form-select" required>
+                        @foreach($activeMarketplaces as $mpKey => $mp)
+                            <option value="{{ $mpKey }}" {{ old('platform', 'tiktok') == $mpKey ? 'selected' : '' }}>
+                                {{ $mp['name'] }} (Rp {{ number_format($mp['default_hourly_rate'], 0, ',', '.') }}/jam)
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('platform')
+                        <div class="form-error">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <div class="form-row mb-3">
                     <div class="form-group mb-0" style="flex: 1.2;">
                         <label for="attendance_date" class="form-label">Tanggal</label>
@@ -104,15 +118,15 @@
 
                 <div class="form-group mb-3">
                     <label for="proof_image" class="form-label flex items-center justify-between">
-                        <span>📸 Bukti Screenshot (Opsional)</span>
-                        <span class="text-xs text-muted" style="color: #10b981;">⚡ Auto-Compress HD</span>
+                        <span>Bukti Screenshot (Opsional)</span>
+                        <span class="text-xs text-muted" style="color: #10b981; font-weight: 600;">Auto-Compress HD</span>
                     </label>
                     <input type="file" name="proof_image" id="proof_image" class="form-control" accept="image/*">
                     <div id="proof-preview"></div>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="vt_link" class="form-label">🔗 Link Video TikTok / VT (Opsional)</label>
+                    <label for="vt_link" class="form-label">Link Video TikTok / VT (Opsional)</label>
                     <input type="url" name="vt_link" id="vt_link" class="form-control"
                         placeholder="https://vt.tiktok.com/..." value="{{ old('vt_link') }}">
                 </div>

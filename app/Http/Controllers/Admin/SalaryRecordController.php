@@ -117,7 +117,7 @@ class SalaryRecordController extends Controller
 
                 // Calculate base salary (without sales bonus)
                 $attendanceData[$key]['salary'] +=
-                    ($hours * $scheme->hourly_rate) +
+                    ($hours * $scheme->getHourlyRateForPlatform($attendance->platform ?? 'tiktok')) +
                     ($attendance->content_edit_count * $scheme->content_edit_rate) +
                     ($attendance->content_live_count * $scheme->content_live_rate);
 
@@ -248,12 +248,28 @@ class SalaryRecordController extends Controller
         $monthlyHours = round($monthlyMinutes / 60, 1);
         $monthlyTarget = $salaryScheme ? $salaryScheme->calculateMonthlyTarget($salary_record->year, $salary_record->month) : 0;
 
+        // Fetch term attendances for platform breakdown
+        $startDate = $salary_record->term == 1 
+            ? \Carbon\Carbon::create($salary_record->year, $salary_record->month, 1)->startOfDay()
+            : \Carbon\Carbon::create($salary_record->year, $salary_record->month, 16)->startOfDay();
+        $endDate = $salary_record->term == 1
+            ? \Carbon\Carbon::create($salary_record->year, $salary_record->month, 15)->endOfDay()
+            : \Carbon\Carbon::create($salary_record->year, $salary_record->month, 1)->endOfMonth()->endOfDay();
+
+        $termAttendances = \App\Models\Attendance::where('user_id', $salary_record->user_id)
+            ->whereIn('status', ['pending', 'validated'])
+            ->whereBetween('attendance_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get();
+
+        $platformBreakdown = $salaryScheme ? $salaryScheme->getPlatformBreakdown($termAttendances) : [];
+
         return view('admin.salary-records.show', [
             'salaryRecord' => $salary_record,
             'salaryScheme' => $salaryScheme,
             'potentialBonus' => $potentialBonus,
             'monthlyHours' => $monthlyHours,
             'monthlyTarget' => $monthlyTarget,
+            'platformBreakdown' => $platformBreakdown,
         ]);
     }
 
@@ -349,7 +365,22 @@ class SalaryRecordController extends Controller
         $monthlyHours = round($monthlyMinutes / 60, 1);
         $monthlyTarget = $salaryScheme ? $salaryScheme->calculateMonthlyTarget($salaryRecord->year, $salaryRecord->month) : 0;
 
-        return view('admin.salary-records.slip', compact('salaryRecord', 'salaryScheme', 'potentialBonus', 'monthlyHours', 'monthlyTarget'));
+        // Fetch term attendances for platform breakdown
+        $startDate = $salaryRecord->term == 1 
+            ? \Carbon\Carbon::create($salaryRecord->year, $salaryRecord->month, 1)->startOfDay()
+            : \Carbon\Carbon::create($salaryRecord->year, $salaryRecord->month, 16)->startOfDay();
+        $endDate = $salaryRecord->term == 1
+            ? \Carbon\Carbon::create($salaryRecord->year, $salaryRecord->month, 15)->endOfDay()
+            : \Carbon\Carbon::create($salaryRecord->year, $salaryRecord->month, 1)->endOfMonth()->endOfDay();
+
+        $termAttendances = \App\Models\Attendance::where('user_id', $salaryRecord->user_id)
+            ->whereIn('status', ['pending', 'validated'])
+            ->whereBetween('attendance_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get();
+
+        $platformBreakdown = $salaryScheme ? $salaryScheme->getPlatformBreakdown($termAttendances) : [];
+
+        return view('admin.salary-records.slip', compact('salaryRecord', 'salaryScheme', 'potentialBonus', 'monthlyHours', 'monthlyTarget', 'platformBreakdown'));
     }
 
     /**
@@ -473,9 +504,12 @@ class SalaryRecordController extends Controller
                     $scheme = $user->salaryScheme;
                     if ($scheme) {
                         // Base salary: hours + content bonuses
-                        $baseSalary += $totalHours * $scheme->hourly_rate;
-                        $baseSalary += $totalContentEdit * $scheme->content_edit_rate;
-                        $baseSalary += $totalContentLive * $scheme->content_live_rate;
+                        foreach ($attendances as $att) {
+                            $plat = $att->platform ?? 'tiktok';
+                            $baseSalary += ($att->live_duration_minutes / 60) * $scheme->getHourlyRateForPlatform($plat);
+                            $baseSalary += ($att->content_edit_count ?? 0) * $scheme->getContentEditRateForPlatform($plat);
+                            $baseSalary += ($att->content_live_count ?? 0) * $scheme->getContentLiveRateForPlatform($plat);
+                        }
 
                         // Bonus only applies on T2 (end of month evaluation)
                         if ($term === '2') {

@@ -1005,11 +1005,17 @@
 
             <!-- Mode Switcher -->
             <div class="view-switcher-pill">
-                <button type="button" class="view-switch-btn active" id="btn-view-table" onclick="switchView('table')">
-                    📊 Tabel
+                <button type="button" class="view-switch-btn active" id="btn-view-table" onclick="switchView('table')" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="13" height="13">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Tabel</span>
                 </button>
-                <button type="button" class="view-switch-btn" id="btn-view-cards" onclick="switchView('cards')">
-                    📱 Kartu
+                <button type="button" class="view-switch-btn" id="btn-view-cards" onclick="switchView('cards')" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="13" height="13">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    <span>Kartu</span>
                 </button>
             </div>
         </div>
@@ -1018,7 +1024,9 @@
     <!-- Scroll Hint Bar for Mobile Table Mode -->
     <div class="scroll-hint-bar" id="scroll-hint">
         <span class="flex items-center gap-1">
-            <span>👉</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="13" height="13">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
             <span>Geser tabel ke samping untuk melihat tanggal 1 - {{ $daysInMonth }} & rekap</span>
         </span>
         <button type="button" onclick="switchView('cards')" style="background: none; border: none; color: #4f46e5; font-weight: 700; font-size: 0.72rem; cursor: pointer; text-decoration: underline;">

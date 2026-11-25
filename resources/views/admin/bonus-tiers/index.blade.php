@@ -15,7 +15,10 @@
 
                 <div class="mb-3">
                     <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.65rem;" class="flex items-center gap-2">
-                        <span>📊</span> Target Durasi Kerja
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16" style="color: var(--primary);">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Target Durasi Kerja</span>
                     </h4>
                     <div class="form-row">
                         <div class="form-group mb-2">
@@ -41,7 +44,7 @@
                         $targetHours = $workDays * $dailyHours;
                     @endphp
                     <div class="alert alert-info mt-2" style="padding: 0.5rem 0.75rem; font-size: 0.78rem; border-radius: 6px;">
-                        <strong>📅 Simulasi Bulan Ini ({{ now()->translatedFormat('F Y') }}):</strong><br>
+                        <strong>Simulasi Bulan Ini ({{ now()->translatedFormat('F Y') }}):</strong><br>
                         {{ $daysInMonth }} hari - {{ $leaveDays }} libur = {{ $workDays }} hari kerja &bull; 
                         <strong>Target: {{ $workDays }} &times; {{ $dailyHours }} = {{ $targetHours }} jam</strong>
                     </div>
@@ -51,7 +54,10 @@
 
                 <div class="mb-3">
                     <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.65rem;" class="flex items-center gap-2">
-                        <span>💰</span> Bonus Penjualan
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16" style="color: #059669;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Bonus Penjualan</span>
                     </h4>
                     <div class="form-row">
                         <div class="form-group mb-2">
